@@ -5,7 +5,7 @@ let package = Package(
     name: "ScanEngine",
     platforms: [.iOS(.v26), .macOS(.v26)],
     products: [
-        .library(name: "ScanEngine", targets: ["ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport"]),
+        .library(name: "ScanEngine", targets: ["ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport", "ScanExtract"]),
     ],
     targets: [
         .target(name: "ScanCore"),
@@ -13,5 +13,6 @@ let package = Package(
         .target(name: "ScanEnhance", dependencies: ["ScanCore"]),
         .target(name: "ScanRecognize", dependencies: ["ScanCore"]),
         .target(name: "ScanExport", dependencies: ["ScanCore", "ScanRecognize"]),
+        .target(name: "ScanExtract", dependencies: ["ScanCore", "ScanRecognize"]),
     ]
 )
