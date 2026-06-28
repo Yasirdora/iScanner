@@ -19,5 +19,9 @@ let package = Package(
             name: "scanlab",
             dependencies: ["ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport", "ScanExtract"]
         ),
+        .testTarget(
+            name: "ScanEngineTests",
+            dependencies: ["ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport", "ScanExtract"]
+        ),
     ]
 )
