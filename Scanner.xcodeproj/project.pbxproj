@@ -1,0 +1,392 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1F6D995BF19104BF67DEA66C /* PageViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ED2FD44B27D745E83F00120 /* PageViewer.swift */; };
+		2492F11CBB1B1992807ADF82 /* ScanPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907347E640EF37D721ED5EC1 /* ScanPipeline.swift */; };
+		26B23DDE8692A96A397798AC /* PageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83A0F340AAD37DAE580DAB85 /* PageRenderer.swift */; };
+		284F21631C67B405AABC8902 /* CropEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8C0A31E9D1FC8AD33819DE8 /* CropEditor.swift */; };
+		4B24350886AA882C79C65BF3 /* ScannerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8EE130F78D90EBF9E4DCA9 /* ScannerApp.swift */; };
+		62E6FE2FAB5D269CB833CAF3 /* DocumentCorners.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 03F4F81017D9D45EA9FB3579 /* DocumentCorners.mlpackage */; };
+		71A2D690D8DC50E3DEACEDF1 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EA71A795B6E23A54E52D3D /* ScanView.swift */; };
+		7E84B4ABE35327205F65CAB8 /* ScanEngine in Frameworks */ = {isa = PBXBuildFile; productRef = ABB27989EAA4D5E7670F5B03 /* ScanEngine */; };
+		99C39BB353C38D4E29ED1094 /* ShutterCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F77C9DB3A67E99ED29ACCF /* ShutterCamera.swift */; };
+		D2CD50A5B82673D2F0640780 /* PageViewerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CA14D19A744E39B983D3DF /* PageViewerScreen.swift */; };
+		EEDB12CE880340C80F51720F /* ShutterCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881D092D96B4FF6EBCDA60B4 /* ShutterCameraView.swift */; };
+		F67ED8C50C1AC8A99F45AFF9 /* DocumentCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B03093FC7AAE2EF29C9CDDB /* DocumentCamera.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		00C34693B6B36FDE9C99D721 /* Scanner.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Scanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		03F4F81017D9D45EA9FB3579 /* DocumentCorners.mlpackage */ = {isa = PBXFileReference; path = DocumentCorners.mlpackage; sourceTree = "<group>"; };
+		15EA71A795B6E23A54E52D3D /* ScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanView.swift; sourceTree = "<group>"; };
+		2ED2FD44B27D745E83F00120 /* PageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageViewer.swift; sourceTree = "<group>"; };
+		3B03093FC7AAE2EF29C9CDDB /* DocumentCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCamera.swift; sourceTree = "<group>"; };
+		63EC645181F1426184747C91 /* scan */ = {isa = PBXFileReference; lastKnownFileType = folder; name = scan; path = .; sourceTree = SOURCE_ROOT; };
+		83A0F340AAD37DAE580DAB85 /* PageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageRenderer.swift; sourceTree = "<group>"; };
+		881D092D96B4FF6EBCDA60B4 /* ShutterCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutterCameraView.swift; sourceTree = "<group>"; };
+		907347E640EF37D721ED5EC1 /* ScanPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanPipeline.swift; sourceTree = "<group>"; };
+		9F8EE130F78D90EBF9E4DCA9 /* ScannerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerApp.swift; sourceTree = "<group>"; };
+		B8F77C9DB3A67E99ED29ACCF /* ShutterCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutterCamera.swift; sourceTree = "<group>"; };
+		C9CA14D19A744E39B983D3DF /* PageViewerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageViewerScreen.swift; sourceTree = "<group>"; };
+		E8C0A31E9D1FC8AD33819DE8 /* CropEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropEditor.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		00A699F636DA8F3B1D1B9006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7E84B4ABE35327205F65CAB8 /* ScanEngine in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		10AAD62D41BCEA99B48F8A63 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				63EC645181F1426184747C91 /* scan */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		27CE0DB947DB47C64B301346 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				03F4F81017D9D45EA9FB3579 /* DocumentCorners.mlpackage */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		35452BD846620757CE76141D = {
+			isa = PBXGroup;
+			children = (
+				9EC210F5E5167B05912CA602 /* App */,
+				27CE0DB947DB47C64B301346 /* Models */,
+				10AAD62D41BCEA99B48F8A63 /* Packages */,
+				C6FD9F1D3B8881900727BD14 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9EC210F5E5167B05912CA602 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				E8C0A31E9D1FC8AD33819DE8 /* CropEditor.swift */,
+				3B03093FC7AAE2EF29C9CDDB /* DocumentCamera.swift */,
+				83A0F340AAD37DAE580DAB85 /* PageRenderer.swift */,
+				2ED2FD44B27D745E83F00120 /* PageViewer.swift */,
+				C9CA14D19A744E39B983D3DF /* PageViewerScreen.swift */,
+				9F8EE130F78D90EBF9E4DCA9 /* ScannerApp.swift */,
+				907347E640EF37D721ED5EC1 /* ScanPipeline.swift */,
+				15EA71A795B6E23A54E52D3D /* ScanView.swift */,
+				B8F77C9DB3A67E99ED29ACCF /* ShutterCamera.swift */,
+				881D092D96B4FF6EBCDA60B4 /* ShutterCameraView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C6FD9F1D3B8881900727BD14 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00C34693B6B36FDE9C99D721 /* Scanner.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C1D5FD9BD37EF50E44DF02E9 /* Scanner */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C905D308A59AAE931F185294 /* Build configuration list for PBXNativeTarget "Scanner" */;
+			buildPhases = (
+				2816D3562D3A72D5CFC7EC1F /* Sources */,
+				00A699F636DA8F3B1D1B9006 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Scanner;
+			packageProductDependencies = (
+				ABB27989EAA4D5E7670F5B03 /* ScanEngine */,
+			);
+			productName = Scanner;
+			productReference = 00C34693B6B36FDE9C99D721 /* Scanner.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0027E4384AFCE23257734560 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					C1D5FD9BD37EF50E44DF02E9 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = B70959265C6947B6225B989E /* Build configuration list for PBXProject "Scanner" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 35452BD846620757CE76141D;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				86FA44FED61EDDC885660C64 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C6FD9F1D3B8881900727BD14 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C1D5FD9BD37EF50E44DF02E9 /* Scanner */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2816D3562D3A72D5CFC7EC1F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				284F21631C67B405AABC8902 /* CropEditor.swift in Sources */,
+				F67ED8C50C1AC8A99F45AFF9 /* DocumentCamera.swift in Sources */,
+				62E6FE2FAB5D269CB833CAF3 /* DocumentCorners.mlpackage in Sources */,
+				26B23DDE8692A96A397798AC /* PageRenderer.swift in Sources */,
+				1F6D995BF19104BF67DEA66C /* PageViewer.swift in Sources */,
+				D2CD50A5B82673D2F0640780 /* PageViewerScreen.swift in Sources */,
+				2492F11CBB1B1992807ADF82 /* ScanPipeline.swift in Sources */,
+				71A2D690D8DC50E3DEACEDF1 /* ScanView.swift in Sources */,
+				4B24350886AA882C79C65BF3 /* ScannerApp.swift in Sources */,
+				99C39BB353C38D4E29ED1094 /* ShutterCamera.swift in Sources */,
+				EEDB12CE880340C80F51720F /* ShutterCameraView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		32D6C97DA4D21C9B8BCD4893 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BCD0B681F63709840A83CCCC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Scanner;
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera is used to photograph documents you scan. Pages are processed entirely on this device.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Saved scans can be added to your photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photos you choose are processed entirely on this device.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.amirdora.scanner;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C74C807AFFB3BCCFFEE76ABF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FD6C775FC8C0CCB28328D5E4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Scanner;
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera is used to photograph documents you scan. Pages are processed entirely on this device.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Saved scans can be added to your photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photos you choose are processed entirely on this device.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.amirdora.scanner;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B70959265C6947B6225B989E /* Build configuration list for PBXProject "Scanner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C74C807AFFB3BCCFFEE76ABF /* Debug */,
+				32D6C97DA4D21C9B8BCD4893 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C905D308A59AAE931F185294 /* Build configuration list for PBXNativeTarget "Scanner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FD6C775FC8C0CCB28328D5E4 /* Debug */,
+				BCD0B681F63709840A83CCCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		86FA44FED61EDDC885660C64 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		ABB27989EAA4D5E7670F5B03 /* ScanEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ScanEngine;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 0027E4384AFCE23257734560 /* Project object */;
+}

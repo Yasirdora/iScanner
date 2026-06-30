@@ -1,0 +1,36 @@
+name: Scanner
+options:
+  bundleIdPrefix: com.amirdora
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  ScanEngine:
+    path: .
+
+targets:
+  Scanner:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Models
+    dependencies:
+      - package: ScanEngine
+        product: ScanEngine
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.amirdora.scanner
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Scanner
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Saved scans can be added to your photo library.
+        INFOPLIST_KEY_NSCameraUsageDescription: The camera is used to photograph documents you scan. Pages are processed entirely on this device.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Photos you choose are processed entirely on this device.
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
