@@ -19,6 +19,9 @@ final class ShutterCamera: NSObject {
 
     private(set) var permissionDenied = false
     var onCapture: ((CGImage) -> Void)?
+    /// How the next capture is lit: auto, on, or off. Cycled from the shutter
+    /// screen; settings are built per shot, so this is read at shutter time.
+    var flashMode: AVCaptureDevice.FlashMode = .auto
 
     /// `AVCaptureSession` is not `Sendable`, but starting and stopping it off
     /// the main thread is what Apple's own sample code does — `startRunning()`
@@ -104,7 +107,11 @@ final class ShutterCamera: NSObject {
     func capture() {
         guard !isCapturing else { return }
         isCapturing = true
-        photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
+        let settings = AVCapturePhotoSettings()
+        if photoOutput.supportedFlashModes.contains(flashMode) {
+            settings.flashMode = flashMode
+        }
+        photoOutput.capturePhoto(with: settings, delegate: self)
     }
 }
 

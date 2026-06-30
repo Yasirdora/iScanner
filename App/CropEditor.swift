@@ -8,7 +8,9 @@ import ScanCapture
 /// fingertip covers the very corner it is placing.
 struct CropEditor: View {
     let image: UIImage
+    var dismissTitle = "Retake"
     @State private var corners: [CGPoint]
+    @State private var detected: [CGPoint]
     @State private var dragging: Int?
     var onCancel: () -> Void
     var onApply: (DocumentQuad) -> Void
@@ -16,10 +18,12 @@ struct CropEditor: View {
     init(
         image: UIImage,
         quad: DocumentQuad?,
+        dismissTitle: String = "Retake",
         onCancel: @escaping () -> Void,
         onApply: @escaping (DocumentQuad) -> Void
     ) {
         self.image = image
+        self.dismissTitle = dismissTitle
         // Vision's origin is bottom-left; the editor works top-left like the
         // view it draws into, so corners flip once in and once out.
         let source = quad ?? DocumentQuad(
@@ -28,27 +32,41 @@ struct CropEditor: View {
             bottomRight: CGPoint(x: 0.94, y: 0.06),
             bottomLeft: CGPoint(x: 0.06, y: 0.06)
         )
-        _corners = State(initialValue: source.corners.map { CGPoint(x: $0.x, y: 1 - $0.y) })
+        let flipped = source.corners.map { CGPoint(x: $0.x, y: 1 - $0.y) }
+        _corners = State(initialValue: flipped)
+        _detected = State(initialValue: flipped)
         self.onCancel = onCancel
         self.onApply = onApply
     }
 
+    /// The whole photo, in the editor's top-left coordinates.
+    private static let fullFrame = [
+        CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0),
+        CGPoint(x: 1, y: 1), CGPoint(x: 0, y: 1),
+    ]
+
+    private static let cornerNames = ["Top left", "Top right", "Bottom right", "Bottom left"]
+
     var body: some View {
-        NavigationStack {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
             GeometryReader { geometry in
                 let frame = fittedRect(in: geometry.size)
                 ZStack {
-                    Color.black.ignoresSafeArea()
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFit()
                         .frame(width: frame.width, height: frame.height)
                         .position(x: frame.midX, y: frame.midY)
 
+                    // Everything outside the page dims, so the crop reads as
+                    // the subject and the rest as context.
+                    CropBackdrop(corners: corners, frame: frame)
+                        .fill(.black.opacity(0.45), style: FillStyle(eoFill: true))
                     CropShape(corners: corners, frame: frame)
-                        .fill(Color.accentColor.opacity(0.14))
-                    CropShape(corners: corners, frame: frame)
-                        .stroke(Color.accentColor, lineWidth: 2.5)
+                        .stroke(.white, lineWidth: 2)
+                        .shadow(color: .black.opacity(0.4), radius: 2)
 
                     ForEach(corners.indices, id: \.self) { index in
                         handle(at: index, in: frame)
@@ -60,42 +78,60 @@ struct CropEditor: View {
                             .allowsHitTesting(false)
                     }
                 }
+                .frame(width: geometry.size.width, height: geometry.size.height)
             }
-            .navigationTitle("Adjust edges")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel", action: onCancel)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Use") {
-                        onApply(DocumentQuad(
-                            topLeft: flip(corners[0]),
-                            topRight: flip(corners[1]),
-                            bottomRight: flip(corners[2]),
-                            bottomLeft: flip(corners[3])
-                        ))
-                    }
-                    .font(.body.weight(.semibold))
-                }
-                ToolbarItem(placement: .bottomBar) {
-                    Button("Whole photo") {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            corners = [
-                                CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0),
-                                CGPoint(x: 1, y: 1), CGPoint(x: 0, y: 1),
-                            ]
-                        }
-                    }
-                }
-            }
+            .ignoresSafeArea()
+
+            bottomBar
         }
         .preferredColorScheme(.dark)
     }
 
-    private func flip(_ point: CGPoint) -> CGPoint {
-        CGPoint(x: point.x, y: 1 - point.y)
+    private var bottomBar: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Button(dismissTitle, action: onCancel)
+                    .font(.body.weight(.medium))
+
+                Spacer()
+
+                Menu {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { corners = detected }
+                    } label: {
+                        Label("Detected Corners", systemImage: "viewfinder")
+                    }
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { corners = Self.fullFrame }
+                    } label: {
+                        Label("Full Photo", systemImage: "photo")
+                    }
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 36, height: 36)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .accessibilityLabel("Reset corners")
+
+                Spacer()
+
+                Button("Keep") {
+                    onApply(DocumentQuad(
+                        topLeft: flip(corners[0]),
+                        topRight: flip(corners[1]),
+                        bottomRight: flip(corners[2]),
+                        bottomLeft: flip(corners[3])
+                    ))
+                }
+                .font(.body.weight(.semibold))
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 14)
+            .foregroundStyle(.white)
+        }
     }
 
     private func handle(at index: Int, in frame: CGRect) -> some View {
@@ -105,12 +141,12 @@ struct CropEditor: View {
         )
         return Circle()
             .fill(.white)
-            .frame(width: 18, height: 18)
+            .frame(width: 20, height: 20)
             .overlay { Circle().stroke(Color.accentColor, lineWidth: 3) }
             .shadow(radius: 2)
             .position(point)
-            // A generous invisible target: an 18-point dot is far smaller than a
-            // fingertip, and missing the handle drags nothing at all.
+            // A generous invisible target: a 20-point dot is far smaller than
+            // a fingertip, and missing the handle drags nothing at all.
             .contentShape(Circle().size(width: 64, height: 64))
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -123,6 +159,31 @@ struct CropEditor: View {
                     }
                     .onEnded { _ in dragging = nil }
             )
+            .sensoryFeedback(.selection, trigger: dragging)
+            // Dragging is not the only way in: VoiceOver gets an adjustable
+            // action, and the reset menu is a plain button.
+            .accessibilityElement()
+            .accessibilityLabel(Self.cornerNames[index])
+            .accessibilityValue(accessibilityValue(index))
+            .accessibilityAdjustableAction { direction in
+                let step: CGFloat = direction == .increment ? 0.02 : -0.02
+                let corner = corners[index]
+                withAnimation(.easeInOut(duration: 0.12)) {
+                    corners[index] = CGPoint(
+                        x: (corner.x + (corner.x < 0.5 ? -step : step)).clamped(),
+                        y: (corner.y + (corner.y < 0.5 ? -step : step)).clamped()
+                    )
+                }
+            }
+    }
+
+    private func accessibilityValue(_ index: Int) -> String {
+        let corner = corners[index]
+        return "\(Int((corner.x * 100).rounded()))%, \(Int((corner.y * 100).rounded()))%"
+    }
+
+    private func flip(_ point: CGPoint) -> CGPoint {
+        CGPoint(x: point.x, y: 1 - point.y)
     }
 
     /// Keeps the loupe away from the finger holding the corner.
@@ -146,6 +207,8 @@ struct CropEditor: View {
     }
 }
 
+// MARK: - Shapes
+
 private struct CropShape: Shape {
     let corners: [CGPoint]
     let frame: CGRect
@@ -162,6 +225,27 @@ private struct CropShape: Shape {
         return path
     }
 }
+
+/// The full view plus the page quad; filled even-odd, this is everything
+/// *outside* the page.
+private struct CropBackdrop: Shape {
+    let corners: [CGPoint]
+    let frame: CGRect
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path(rect)
+        let points = corners.map {
+            CGPoint(x: frame.minX + $0.x * frame.width, y: frame.minY + $0.y * frame.height)
+        }
+        guard let first = points.first else { return path }
+        path.move(to: first)
+        for point in points.dropFirst() { path.addLine(to: point) }
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Magnifier
 
 private struct Magnifier: View {
     let image: UIImage

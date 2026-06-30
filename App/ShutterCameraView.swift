@@ -14,6 +14,7 @@ struct ShutterCameraView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var camera = ShutterCamera()
     @State private var flash = false
+    @State private var showHint = true
 
     var body: some View {
         ZStack {
@@ -25,23 +26,23 @@ struct ShutterCameraView: View {
 
             VStack {
                 HStack {
-                    Button("Cancel", action: onCancel)
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 9)
-                        .background(.ultraThinMaterial, in: Capsule())
+                    glassButton(systemImage: "xmark", label: "Close", action: onCancel)
                     Spacer()
+                    glassButton(systemImage: flashIcon, label: flashLabel, action: cycleFlash)
                 }
                 .padding(.top, 8)
 
                 Spacer()
 
-                Text("Fill the frame with the item, then shoot")
-                    .font(.subheadline.weight(.medium))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .padding(.bottom, 18)
+                if showHint {
+                    Text("Line up the item, then tap to capture")
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .padding(.bottom, 18)
+                        .transition(.opacity)
+                }
 
                 ShutterButton { camera.capture() }
                     .padding(.bottom, 30)
@@ -56,9 +57,56 @@ struct ShutterCameraView: View {
             camera.onCapture = handleCapture
             await camera.start()
         }
+        .task {
+            try? await Task.sleep(for: .seconds(4))
+            withAnimation(.easeOut(duration: 0.4)) { showHint = false }
+        }
         .onDisappear { camera.stop() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await camera.start() } } else { camera.stop() }
+        }
+    }
+
+    // MARK: - Chrome
+
+    private func glassButton(
+        systemImage: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 36, height: 36)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .accessibilityLabel(label)
+    }
+
+    private var flashIcon: String {
+        switch camera.flashMode {
+        case .auto: "bolt.badge.a"
+        case .on: "bolt.fill"
+        case .off: "bolt.slash.fill"
+        @unknown default: "bolt.slash.fill"
+        }
+    }
+
+    private var flashLabel: String {
+        switch camera.flashMode {
+        case .auto: "Flash: Automatic"
+        case .on: "Flash: On"
+        case .off: "Flash: Off"
+        @unknown default: "Flash"
+        }
+    }
+
+    private func cycleFlash() {
+        switch camera.flashMode {
+        case .auto: camera.flashMode = .on
+        case .on: camera.flashMode = .off
+        case .off: camera.flashMode = .auto
+        @unknown default: camera.flashMode = .auto
         }
     }
 
@@ -119,5 +167,6 @@ struct ShutterButton: View {
             .frame(width: 78, height: 78)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Capture")
     }
 }

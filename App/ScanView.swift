@@ -2,13 +2,17 @@ import PhotosUI
 import ScanCapture
 import ScanCore
 import SwiftUI
+import UIKit
 
-/// The app's only screen: the pages captured so far, and the ways to add one.
+/// The app's home: the pages captured so far, and the ways to add one.
 struct ScanView: View {
     @State private var pipeline = ScanPipeline()
     @State private var destination: Destination?
     @State private var photoItem: PhotosPickerItem?
     @State private var isFindingPage = false
+    @State private var confirmDeleteAll = false
+    @State private var sharePayload: SharePayload?
+    @AppStorage("scanStyle") private var styleRaw = ScanStyle.auto.rawValue
 
     /// Every full-screen flow this view can present.
     ///
@@ -20,10 +24,10 @@ struct ScanView: View {
     private enum Destination: Identifiable {
         /// Apple's scanner, for a page that fills the frame.
         case documentScanner
-        /// Plain shutter with live detection, for a small item on a larger surface.
+        /// Plain shutter, for a small item on a larger surface.
         case itemCamera
         /// Confirming the detected edges of a photo before it is processed.
-        case adjustEdges(image: UIImage, quad: DocumentQuad?)
+        case adjustEdges(image: UIImage, quad: DocumentQuad?, retake: Bool)
         /// Reading a finished page full screen, with Live Text.
         case viewPage(index: Int)
 
@@ -37,84 +41,141 @@ struct ScanView: View {
         }
     }
 
+    private var style: ScanStyle { ScanStyle(rawValue: styleRaw) ?? .auto }
+    private var readyResults: [ScanResult] { pipeline.pages.compactMap(\.result) }
+
     var body: some View {
         NavigationStack {
-            List {
-                styleSection
-                if let failure = pipeline.failure { failureSection(failure) }
-                ForEach(Array(pipeline.results.enumerated()), id: \.element.id) { index, result in
-                    ResultCard(result: result) { destination = .viewPage(index: index) }
+            content
+                .navigationTitle("Scanner")
+                .toolbar {
+                    topBar
+                    bottomBar
                 }
-                if pipeline.results.isEmpty && !isBusy {
-                    emptySection
+                .overlay { findingOverlay }
+                .fullScreenCover(item: $destination, content: cover)
+                .sheet(item: $sharePayload) { payload in
+                    ActivityView(items: [payload.url])
                 }
+                .confirmationDialog(
+                    "Delete all scans?",
+                    isPresented: $confirmDeleteAll,
+                    titleVisibility: .visible
+                ) {
+                    Button("Delete All", role: .destructive) {
+                        withAnimation { pipeline.clear() }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("\(pipeline.pages.count) page\(pipeline.pages.count == 1 ? "" : "s") will be deleted. This can't be undone.")
+                }
+                .onChange(of: photoItem, handlePhotoSelection)
+                .onChange(of: styleRaw) { _, _ in pipeline.style = style }
+                .onAppear { pipeline.style = style }
+                .task {
+                    #if DEBUG
+                    await runDemoIfRequested()
+                    #endif
+                }
+        }
+    }
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private var content: some View {
+        if pipeline.pages.isEmpty {
+            emptyState
+        } else {
+            ScrollView {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 156), spacing: 18)],
+                    spacing: 20
+                ) {
+                    ForEach(Array(pipeline.pages.enumerated()), id: \.element.id) { index, page in
+                        PageCard(page: page, index: index) {
+                            open(page)
+                        } onDelete: {
+                            withAnimation { pipeline.remove(page.id) }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
             }
-            .navigationTitle("Scanner")
-            .toolbar { toolbar }
-            .overlay { busyOverlay }
-            .fullScreenCover(item: $destination, content: cover)
-            .onChange(of: photoItem, handlePhotoSelection)
         }
     }
 
-    private var isBusy: Bool { pipeline.isRunning || isFindingPage }
-
-    // MARK: - Sections
-
-    private var styleSection: some View {
-        Section {
-            Picker("Style", selection: $pipeline.style) {
-                ForEach(ScanStyle.offered, id: \.self) { style in
-                    Text(style.title).tag(style)
-                }
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No scans yet", systemImage: "doc.viewfinder")
+        } description: {
+            Text("Scan a page or import a photo. Everything is processed on this device.")
+        } actions: {
+            Button {
+                destination = .documentScanner
+            } label: {
+                Text("Scan a Document")
             }
-            .pickerStyle(.segmented)
-        } footer: {
-            Text(pipeline.extractionAvailable
-                 ? "On-device model available — pages will also be classified and named."
-                 : "On-device model unavailable on this device. Capture, enhancement, recognition, and PDF export are unaffected.")
+            .buttonStyle(.borderedProminent)
+
+            PhotosPicker(selection: $photoItem, matching: .images) {
+                Text("Import a Photo")
+            }
         }
     }
 
-    private func failureSection(_ message: String) -> some View {
-        Section {
-            Label(message, systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.red)
-        }
-    }
-
-    private var emptySection: some View {
-        Section {
-            ContentUnavailableView(
-                "No scans yet",
-                systemImage: "doc.viewfinder",
-                description: Text("Scan a page or pick a photo. Everything is processed on this device.")
-            )
+    @ViewBuilder
+    private var findingOverlay: some View {
+        if isFindingPage {
+            ProgressView("Finding the page")
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(.regularMaterial, in: Capsule())
         }
     }
 
     // MARK: - Chrome
 
     @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button("Clear", action: pipeline.clear)
-                .disabled(pipeline.results.isEmpty)
+    private var topBar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                if !readyResults.isEmpty {
+                    Button(action: shareAll) {
+                        Label("Share All as PDF", systemImage: "square.and.arrow.up")
+                    }
+                    Divider()
+                }
+                Button {
+                    destination = .itemCamera
+                } label: {
+                    Label("Scan a Small Item", systemImage: "viewfinder.rectangular")
+                }
+                Picker("Scan Look", selection: $styleRaw) {
+                    ForEach(ScanStyle.offered, id: \.self) { style in
+                        Text(style.title).tag(style.rawValue)
+                    }
+                }
+                if !pipeline.pages.isEmpty {
+                    Divider()
+                    Button(role: .destructive) {
+                        confirmDeleteAll = true
+                    } label: {
+                        Label("Delete All Scans", systemImage: "trash")
+                    }
+                }
+            } label: {
+                Label("More", systemImage: "ellipsis.circle")
+            }
         }
+    }
+
+    @ToolbarContentBuilder
+    private var bottomBar: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
             PhotosPicker(selection: $photoItem, matching: .images) {
-                Label("Photo", systemImage: "photo")
-            }
-            Spacer()
-            // Two capture paths, because one detector cannot cover both jobs.
-            // Apple's scanner is fast and familiar and finds a page that fills
-            // the frame. It returns nothing at all for a small card lying on a
-            // larger sheet — measured on real photographs — and cannot be
-            // tuned, so that case gets a path of its own.
-            Button {
-                destination = .itemCamera
-            } label: {
-                Label("Small item", systemImage: "viewfinder.rectangular")
+                Label("Import", systemImage: "photo.on.rectangle.angled")
             }
             Spacer()
             Button {
@@ -126,12 +187,38 @@ struct ScanView: View {
         }
     }
 
-    @ViewBuilder
-    private var busyOverlay: some View {
-        if isFindingPage {
-            ProgressView("Finding the page").controlSize(.large)
-        } else if pipeline.isRunning {
-            ProgressView("Processing").controlSize(.large)
+    // MARK: - Flows
+
+    private func open(_ page: PageItem) {
+        guard page.stage.isReady,
+              let resultID = page.result?.id,
+              let index = readyResults.firstIndex(where: { $0.id == resultID }) else { return }
+        destination = .viewPage(index: index)
+    }
+
+    private func shareAll() {
+        guard let url = pipeline.exportAllPDF() else { return }
+        sharePayload = SharePayload(url: url)
+    }
+
+    /// An imported or hand-shot photo is a whole picture, not a page: the
+    /// document sits somewhere inside it. Detection is reliable about *which*
+    /// object is the page and only approximate about its edge, so the corners
+    /// are always offered rather than applied silently.
+    private func findPage(in image: UIImage, retake: Bool) async {
+        isFindingPage = true
+        let quad = await pipeline.findDocument(in: image)
+        isFindingPage = false
+        destination = .adjustEdges(image: image, quad: quad, retake: retake)
+    }
+
+    private func handlePhotoSelection(_ previous: PhotosPickerItem?, _ item: PhotosPickerItem?) {
+        guard let item else { return }
+        Task {
+            defer { photoItem = nil }
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data) else { return }
+            await findPage(in: image, retake: false)
         }
     }
 
@@ -150,20 +237,25 @@ struct ScanView: View {
         case .itemCamera:
             ShutterCameraView(
                 onCancel: { self.destination = nil },
-                onCapture: { image in Task { await findPage(in: image) } }
+                onCapture: { image in Task { await findPage(in: image, retake: true) } }
             )
 
         case .viewPage(let index):
             PageViewerScreen(
-                results: pipeline.results,
+                results: readyResults,
                 selection: index,
-                onDone: { self.destination = nil }
+                onDone: { self.destination = nil },
+                onDelete: { id in
+                    pipeline.remove(id)
+                    self.destination = nil
+                }
             )
 
-        case .adjustEdges(let image, let quad):
+        case .adjustEdges(let image, let quad, let retake):
             CropEditor(
                 image: image,
                 quad: quad,
+                dismissTitle: retake ? "Retake" : "Cancel",
                 onCancel: { self.destination = nil },
                 onApply: { corrected in
                     self.destination = nil
@@ -173,83 +265,55 @@ struct ScanView: View {
         }
     }
 
-    // MARK: - Flows
+    // MARK: - Development
 
-    /// An imported or hand-shot photo is a whole picture, not a page: the
-    /// document sits somewhere inside it. Detection is reliable about *which*
-    /// object is the page and only approximate about its edge, so the corners
-    /// are always offered rather than applied silently.
-    private func findPage(in image: UIImage) async {
-        isFindingPage = true
-        let quad = await pipeline.findDocument(in: image)
-        isFindingPage = false
-        destination = .adjustEdges(image: image, quad: quad)
-    }
+    #if DEBUG
+    /// Drives a flow without fingers, so screens can be exercised in the
+    /// simulator — which has no camera and cannot be tapped headlessly. Set
+    /// `SCANNER_DEMO` to comma-separated tokens: `import:<path>`,
+    /// `crop:<path>`, `smallitem`, `viewer`.
+    private func runDemoIfRequested() async {
+        guard let spec = ProcessInfo.processInfo.environment["SCANNER_DEMO"] else { return }
+        var openViewer = false
 
-    private func handlePhotoSelection(_ previous: PhotosPickerItem?, _ item: PhotosPickerItem?) {
-        guard let item else { return }
-        Task {
-            defer { photoItem = nil }
-            guard let data = try? await item.loadTransferable(type: Data.self),
-                  let image = UIImage(data: data) else { return }
-            await findPage(in: image)
+        for token in spec.split(separator: ",").map(String.init) {
+            if token == "viewer" {
+                openViewer = true
+            } else if token == "smallitem" {
+                destination = .itemCamera
+            } else if token.hasPrefix("import:") {
+                let path = String(token.dropFirst("import:".count))
+                if let image = UIImage(contentsOfFile: path) {
+                    await pipeline.run(imported: image, quad: nil)
+                }
+            } else if token.hasPrefix("crop:") {
+                let path = String(token.dropFirst("crop:".count))
+                if let image = UIImage(contentsOfFile: path) {
+                    await findPage(in: image, retake: false)
+                }
+            }
+        }
+
+        if openViewer, !readyResults.isEmpty {
+            destination = .viewPage(index: 0)
         }
     }
+    #endif
 }
 
-// MARK: - Result
+// MARK: - Sharing
 
-private struct ResultCard: View {
-    let result: ScanResult
-    var onOpen: () -> Void
+private struct SharePayload: Identifiable {
+    let id = UUID()
+    let url: URL
+}
 
-    var body: some View {
-        Section {
-            Button(action: onOpen) {
-                Image(uiImage: result.enhanced)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 340)
-            }
-            .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets())
+private struct ActivityView: UIViewControllerRepresentable {
+    let items: [Any]
 
-            LabeledContent("Characters", value: "\(result.recognition.transcript.count)")
-            LabeledContent("Text runs", value: "\(result.recognition.runs.count)")
-            if !result.recognition.tables.isEmpty {
-                LabeledContent("Tables", value: "\(result.recognition.tables.count)")
-            }
-            if !result.recognition.detected.isEmpty {
-                LabeledContent("Detected values", value: "\(result.recognition.detected.count)")
-            }
-            if !result.recognition.barcodes.isEmpty {
-                LabeledContent("Barcodes", value: "\(result.recognition.barcodes.count)")
-            }
-
-            LabeledContent("Enhance", value: milliseconds(result.timings.enhanceMs))
-            LabeledContent("Recognise", value: milliseconds(result.timings.recognizeMs))
-            LabeledContent("Export", value: milliseconds(result.timings.exportMs))
-            if result.timings.extractMs > 0 {
-                LabeledContent("Extract", value: milliseconds(result.timings.extractMs))
-            }
-
-            if let extraction = result.extraction {
-                Text(extraction).font(.callout)
-            }
-
-            DisclosureGroup("Recognised text") {
-                Text(result.recognition.transcript.isEmpty ? "Nothing recognised." : result.recognition.transcript)
-                    .font(.system(.footnote, design: .monospaced))
-                    .textSelection(.enabled)
-            }
-
-            ShareLink(item: result.pdfURL) {
-                Label("Share searchable PDF", systemImage: "square.and.arrow.up")
-            }
-        }
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
     }
 
-    private func milliseconds(_ value: Double) -> String {
-        String(format: "%.0f ms", value)
-    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }

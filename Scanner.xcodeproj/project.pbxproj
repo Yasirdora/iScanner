@@ -15,6 +15,8 @@
 		62E6FE2FAB5D269CB833CAF3 /* DocumentCorners.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 03F4F81017D9D45EA9FB3579 /* DocumentCorners.mlpackage */; };
 		71A2D690D8DC50E3DEACEDF1 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EA71A795B6E23A54E52D3D /* ScanView.swift */; };
 		7E84B4ABE35327205F65CAB8 /* ScanEngine in Frameworks */ = {isa = PBXBuildFile; productRef = ABB27989EAA4D5E7670F5B03 /* ScanEngine */; };
+		8D06A15D7110F137576A4541 /* PageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB09FE2A4303EB84FA1741F7 /* PageCard.swift */; };
+		9203CF9B170D5FB229372222 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 798DB9B7F28FFF90151F8EAD /* Assets.xcassets */; };
 		99C39BB353C38D4E29ED1094 /* ShutterCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F77C9DB3A67E99ED29ACCF /* ShutterCamera.swift */; };
 		D2CD50A5B82673D2F0640780 /* PageViewerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CA14D19A744E39B983D3DF /* PageViewerScreen.swift */; };
 		EEDB12CE880340C80F51720F /* ShutterCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881D092D96B4FF6EBCDA60B4 /* ShutterCameraView.swift */; };
@@ -28,6 +30,7 @@
 		2ED2FD44B27D745E83F00120 /* PageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageViewer.swift; sourceTree = "<group>"; };
 		3B03093FC7AAE2EF29C9CDDB /* DocumentCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCamera.swift; sourceTree = "<group>"; };
 		63EC645181F1426184747C91 /* scan */ = {isa = PBXFileReference; lastKnownFileType = folder; name = scan; path = .; sourceTree = SOURCE_ROOT; };
+		798DB9B7F28FFF90151F8EAD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		83A0F340AAD37DAE580DAB85 /* PageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageRenderer.swift; sourceTree = "<group>"; };
 		881D092D96B4FF6EBCDA60B4 /* ShutterCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutterCameraView.swift; sourceTree = "<group>"; };
 		907347E640EF37D721ED5EC1 /* ScanPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanPipeline.swift; sourceTree = "<group>"; };
@@ -35,6 +38,7 @@
 		B8F77C9DB3A67E99ED29ACCF /* ShutterCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutterCamera.swift; sourceTree = "<group>"; };
 		C9CA14D19A744E39B983D3DF /* PageViewerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageViewerScreen.swift; sourceTree = "<group>"; };
 		E8C0A31E9D1FC8AD33819DE8 /* CropEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropEditor.swift; sourceTree = "<group>"; };
+		EB09FE2A4303EB84FA1741F7 /* PageCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,8 +82,10 @@
 		9EC210F5E5167B05912CA602 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				798DB9B7F28FFF90151F8EAD /* Assets.xcassets */,
 				E8C0A31E9D1FC8AD33819DE8 /* CropEditor.swift */,
 				3B03093FC7AAE2EF29C9CDDB /* DocumentCamera.swift */,
+				EB09FE2A4303EB84FA1741F7 /* PageCard.swift */,
 				83A0F340AAD37DAE580DAB85 /* PageRenderer.swift */,
 				2ED2FD44B27D745E83F00120 /* PageViewer.swift */,
 				C9CA14D19A744E39B983D3DF /* PageViewerScreen.swift */,
@@ -108,6 +114,7 @@
 			buildConfigurationList = C905D308A59AAE931F185294 /* Build configuration list for PBXNativeTarget "Scanner" */;
 			buildPhases = (
 				2816D3562D3A72D5CFC7EC1F /* Sources */,
+				52931A970A482FCA23D8FE56 /* Resources */,
 				00A699F636DA8F3B1D1B9006 /* Frameworks */,
 			);
 			buildRules = (
@@ -158,6 +165,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		52931A970A482FCA23D8FE56 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9203CF9B170D5FB229372222 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		2816D3562D3A72D5CFC7EC1F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -166,6 +184,7 @@
 				284F21631C67B405AABC8902 /* CropEditor.swift in Sources */,
 				F67ED8C50C1AC8A99F45AFF9 /* DocumentCamera.swift in Sources */,
 				62E6FE2FAB5D269CB833CAF3 /* DocumentCorners.mlpackage in Sources */,
+				8D06A15D7110F137576A4541 /* PageCard.swift in Sources */,
 				26B23DDE8692A96A397798AC /* PageRenderer.swift in Sources */,
 				1F6D995BF19104BF67DEA66C /* PageViewer.swift in Sources */,
 				D2CD50A5B82673D2F0640780 /* PageViewerScreen.swift in Sources */,
