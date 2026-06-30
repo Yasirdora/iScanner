@@ -15,6 +15,9 @@ struct ScanResult: Identifiable {
     var timings: StageTimings
     var pdfURL: URL
     var extraction: String?
+    /// A small copy for grids and rails; the full-resolution page is only
+    /// decoded where it is actually read.
+    var thumbnail: UIImage
 }
 
 /// A page in the session, from the shutter to the share sheet.
@@ -35,9 +38,18 @@ struct PageItem: Identifiable {
     }
 
     let id = UUID()
-    var source: UIImage
+    /// The capture, until the enhanced page replaces it.
+    var source: UIImage?
+    /// Grid-sized copy of the capture, so drawing a 170-point card never holds
+    /// a 12-megapixel page in memory.
+    let thumbnail: UIImage
     var stage: Stage = .enhancing
     var result: ScanResult?
+
+    init(source: UIImage) {
+        self.source = source
+        self.thumbnail = downsampled(source, maxDimension: 640)
+    }
 
     /// What the page is called in the grid: the extractor's title when it has
     /// one, a plain description otherwise.
@@ -141,6 +153,11 @@ final class ScanPipeline {
         pages.removeAll { $0.id == id }
     }
 
+    /// Puts a page back where it was, for undoing a delete.
+    func insert(_ page: PageItem, at index: Int) {
+        pages.insert(page, at: min(index, pages.count))
+    }
+
     /// One searchable PDF for the whole session, for sharing everything at once.
     func exportAllPDF() -> URL? {
         let ready = pages.compactMap(\.result).compactMap { result in
@@ -200,11 +217,16 @@ final class ScanPipeline {
                 recognition: recognition,
                 timings: timings,
                 pdfURL: url,
-                extraction: extraction
+                extraction: extraction,
+                thumbnail: downsampled(enhanced.uiImage, maxDimension: 640)
             )
             update(id) { page in
                 page.result = result
                 page.stage = .ready
+                // The full capture is no longer needed once the enhanced page
+                // and its PDF exist; holding it would double the session's
+                // memory for nothing.
+                page.source = nil
             }
         } catch {
             update(id) { $0.stage = .failed(String(describing: error)) }
@@ -234,6 +256,20 @@ final class ScanPipeline {
 enum PipelineError: Error, CustomStringConvertible {
     case noBitmap
     var description: String { "That image had no bitmap to work on." }
+}
+
+/// A grid- or rail-sized copy of an image, drawn at 1x points: big enough for a
+/// card at 3x, small enough that a whole session fits in memory comfortably.
+func downsampled(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+    let longest = max(image.size.width, image.size.height)
+    guard longest > maxDimension else { return image }
+    let scale = maxDimension / longest
+    let target = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+    let format = UIGraphicsImageRendererFormat.default()
+    format.scale = 1
+    return UIGraphicsImageRenderer(size: target, format: format).image { _ in
+        image.draw(in: CGRect(origin: .zero, size: target))
+    }
 }
 
 private extension Duration {

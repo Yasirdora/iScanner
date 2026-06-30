@@ -12,6 +12,9 @@ struct ScanView: View {
     @State private var isFindingPage = false
     @State private var confirmDeleteAll = false
     @State private var sharePayload: SharePayload?
+    @State private var deleted: (page: PageItem, index: Int)?
+    @State private var undoTask: Task<Void, Never>?
+    @Namespace private var pageTransition
     @AppStorage("scanStyle") private var styleRaw = ScanStyle.auto.rawValue
 
     /// Every full-screen flow this view can present.
@@ -53,6 +56,7 @@ struct ScanView: View {
                     bottomBar
                 }
                 .overlay { findingOverlay }
+                .overlay(alignment: .bottom) { undoSnackbar }
                 .fullScreenCover(item: $destination, content: cover)
                 .sheet(item: $sharePayload) { payload in
                     ActivityView(items: [payload.url])
@@ -96,12 +100,14 @@ struct ScanView: View {
                         PageCard(page: page, index: index) {
                             open(page)
                         } onDelete: {
-                            withAnimation { pipeline.remove(page.id) }
+                            delete(page)
                         }
+                        .matchedTransitionSource(id: page.result?.id ?? page.id, in: pageTransition)
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
+                .animation(.spring(duration: 0.4), value: pipeline.pages.count)
             }
         }
     }
@@ -132,6 +138,24 @@ struct ScanView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 14)
                 .background(.regularMaterial, in: Capsule())
+        }
+    }
+
+    @ViewBuilder
+    private var undoSnackbar: some View {
+        if deleted != nil {
+            HStack(spacing: 14) {
+                Text("Page deleted")
+                    .font(.subheadline)
+                Button("Undo", action: undoDelete)
+                    .font(.subheadline.weight(.semibold))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(.regularMaterial, in: Capsule())
+            .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+            .padding(.bottom, 66)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 
@@ -201,6 +225,30 @@ struct ScanView: View {
         sharePayload = SharePayload(url: url)
     }
 
+    private func delete(_ page: PageItem) {
+        guard let index = pipeline.pages.firstIndex(where: { $0.id == page.id }) else { return }
+        withAnimation { pipeline.remove(page.id) }
+        deleted = (page, index)
+        undoTask?.cancel()
+        undoTask = Task {
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            withAnimation { deleted = nil }
+        }
+    }
+
+    private func undoDelete() {
+        undoTask?.cancel()
+        guard let record = deleted else { return }
+        withAnimation { pipeline.insert(record.page, at: record.index) }
+        deleted = nil
+    }
+
+    /// The card a presented page zooms out of, so the two animations match.
+    private func viewerSourceID(for index: Int) -> UUID {
+        readyResults.indices.contains(index) ? readyResults[index].id : UUID()
+    }
+
     /// An imported or hand-shot photo is a whole picture, not a page: the
     /// document sits somewhere inside it. Detection is reliable about *which*
     /// object is the page and only approximate about its edge, so the corners
@@ -246,10 +294,13 @@ struct ScanView: View {
                 selection: index,
                 onDone: { self.destination = nil },
                 onDelete: { id in
-                    pipeline.remove(id)
+                    if let page = pipeline.pages.first(where: { $0.result?.id == id }) {
+                        delete(page)
+                    }
                     self.destination = nil
                 }
             )
+            .navigationTransition(.zoom(sourceID: viewerSourceID(for: index), in: pageTransition))
 
         case .adjustEdges(let image, let quad, let retake):
             CropEditor(

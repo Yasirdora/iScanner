@@ -31,6 +31,7 @@ final class ShutterCamera: NSObject {
     private let photoOutput = AVCapturePhotoOutput()
     private let sessionQueue = DispatchQueue(label: "scanner.session")
     private var isCapturing = false
+    @ObservationIgnored private var device: AVCaptureDevice?
 
     // MARK: - Lifecycle
 
@@ -75,6 +76,7 @@ final class ShutterCamera: NSObject {
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else { return }
+        self.device = device
         session.addInput(input)
         configureFocus(on: device)
 
@@ -102,6 +104,25 @@ final class ShutterCamera: NSObject {
         }
     }
 
+    // MARK: - Focus
+
+    /// One-shot focus and metering at a point on the preview, in device
+    /// coordinates. The camera drifts back to continuous once the shot is
+    /// taken, so this never strands the viewfinder on a bad guess.
+    func focus(at point: CGPoint) {
+        guard let device, (try? device.lockForConfiguration()) != nil else { return }
+        defer { device.unlockForConfiguration() }
+
+        if device.isFocusPointOfInterestSupported, device.isFocusModeSupported(.autoFocus) {
+            device.focusPointOfInterest = point
+            device.focusMode = .autoFocus
+        }
+        if device.isExposurePointOfInterestSupported, device.isExposureModeSupported(.autoExpose) {
+            device.exposurePointOfInterest = point
+            device.exposureMode = .autoExpose
+        }
+    }
+
     // MARK: - Shutter
 
     func capture() {
@@ -112,6 +133,11 @@ final class ShutterCamera: NSObject {
             settings.flashMode = flashMode
         }
         photoOutput.capturePhoto(with: settings, delegate: self)
+        // A metering tap leaves focus in one-shot mode; hand it back to
+        // continuous so the viewfinder is live again for the next page.
+        if let device {
+            configureFocus(on: device)
+        }
     }
 }
 

@@ -21,12 +21,12 @@ struct PageCard: View {
             .accessibilityHint(page.stage.isReady ? "Opens the page" : "")
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Page \(index + 1)")
-                    .font(.subheadline.weight(.semibold))
                 Text(page.title)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Text("Page \(index + 1)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
             .accessibilityHidden(true)
         }
@@ -45,25 +45,30 @@ struct PageCard: View {
                 Label("Delete Page", systemImage: "trash")
             }
         }
+        .sensoryFeedback(.success, trigger: page.stage.isReady)
     }
 
     private var thumbnail: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
-            Image(uiImage: page.result?.enhanced ?? page.source)
+            Image(uiImage: page.result?.thumbnail ?? page.thumbnail)
                 .resizable()
                 .scaledToFit()
                 .padding(10)
                 .opacity(page.stage.isReady ? 1 : 0.45)
+                .scaleEffect(page.stage.isReady ? 1 : 0.97)
             status
         }
         .aspectRatio(3.0 / 4.0, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .compositingGroup()
+        .shadow(color: .black.opacity(0.10), radius: 10, y: 5)
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         }
+        .animation(.spring(duration: 0.45, bounce: 0.25), value: page.stage)
     }
 
     @ViewBuilder

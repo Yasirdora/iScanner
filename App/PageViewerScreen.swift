@@ -36,6 +36,7 @@ struct PageViewerScreen: View {
             if tipVisible { tip }
         }
         .statusBarHidden(!isChromeVisible)
+        .sensoryFeedback(.selection, trigger: selection)
         .task {
             guard !hasSeenTip else { return }
             hasSeenTip = true
@@ -60,55 +61,88 @@ struct PageViewerScreen: View {
     }
 
     private var chrome: some View {
-        VStack {
-            HStack {
-                Button {
-                    onDone()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(width: 36, height: 36)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .accessibilityLabel("Close")
-
-                Spacer()
-
-                if results.count > 1 {
-                    Text("\(selection + 1) of \(results.count)")
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(.ultraThinMaterial, in: Capsule())
-                }
-
-                Spacer()
-
-                Menu {
-                    if let result = results[safe: selection] {
-                        ShareLink(item: result.pdfURL) {
-                            Label("Share PDF", systemImage: "square.and.arrow.up")
-                        }
-                    }
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Label("Delete Page", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(width: 36, height: 36)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .accessibilityLabel("Page Actions")
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-
+        VStack(spacing: 0) {
+            topBar
             Spacer()
+            if results.count > 1 { rail }
         }
         .transition(.opacity)
+    }
+
+    private var topBar: some View {
+        HStack {
+            Button {
+                onDone()
+            } label: {
+                glassIcon("xmark")
+            }
+            .accessibilityLabel("Close")
+
+            Spacer()
+
+            Menu {
+                if let result = results[safe: selection] {
+                    ShareLink(item: result.pdfURL) {
+                        Label("Share PDF", systemImage: "square.and.arrow.up")
+                    }
+                }
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Label("Delete Page", systemImage: "trash")
+                }
+            } label: {
+                glassIcon("ellipsis")
+            }
+            .accessibilityLabel("Page Actions")
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+    }
+
+    private func glassIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 15, weight: .semibold))
+            .frame(width: 36, height: 36)
+            .background(.ultraThinMaterial, in: Circle())
+    }
+
+    /// The page rail: jump anywhere in the document without swiping through it.
+    private var rail: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { selection = index }
+                        } label: {
+                            Image(uiImage: result.thumbnail)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 46, height: 58)
+                                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .strokeBorder(
+                                            index == selection ? Color.accentColor : Color.primary.opacity(0.15),
+                                            lineWidth: index == selection ? 2.5 : 0.5
+                                        )
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .id(index)
+                        .accessibilityLabel("Page \(index + 1)")
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+            }
+            .onChange(of: selection) { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) { proxy.scrollTo(newValue, anchor: .center) }
+            }
+            .onAppear { proxy.scrollTo(selection, anchor: .center) }
+        }
+        .background(.ultraThinMaterial)
     }
 
     /// A one-time tip: it appears the first time a page is opened and never
@@ -122,7 +156,7 @@ struct PageViewerScreen: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(.regularMaterial, in: Capsule())
-                .padding(.bottom, 26)
+                .padding(.bottom, results.count > 1 ? 96 : 26)
         }
         .allowsHitTesting(false)
         .transition(.opacity)
