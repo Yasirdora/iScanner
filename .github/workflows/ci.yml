@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine:
+    name: Engine — build and test (macOS)
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v7
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
+
+  app:
+    name: App — build for the iOS Simulator
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project Scanner.xcodeproj \
+            -scheme Scanner \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO
