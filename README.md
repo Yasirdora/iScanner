@@ -11,9 +11,10 @@ can be run, measured and tested from the command line, without a simulator.
 
 ![A synthetic page with a heavy shadow: as shot, enhanced, and bitonal](Fixtures/out/comparison.png)
 
-*A synthetic test page with a heavy shadow: as shot, enhanced, and bitonal.
+*A synthetic test page with a heavy shadow: as shot, cleaned up, and Ink.
 `scanlab synth` writes the page together with its exact transcript, so every
-result can be scored.*
+result can be scored. The labels inside the image come from an earlier
+measurement; the current numbers are in the table below.*
 
 ## What it does
 
@@ -33,18 +34,41 @@ result can be scored.*
 scores it against the ground truth. CER is the character error rate: lower is
 better, 0 means every character is right.
 
-<!-- RESULTS: filled in from a fresh `scanlab compare` run -->
+Measured with Xcode 27.0 on an Apple silicon Mac. On this ~350-character
+receipt, 0.006 is about two wrong characters.
+
+| Test page | Auto (default) | Photo as shot | Ink file vs photo |
+|---|---|---|---|
+| Ordinary receipt | 0.006 | 0.017 | 108 KB vs 1199 KB |
+| Clean receipt | 0.006 | 0.017 | 107 KB vs 499 KB |
+| Heavy shadow | 0.023 | **0.011** | 123 KB vs 1385 KB |
+| Heavy shadow, 4K | 0.011 | 0.017 | 501 KB vs 4115 KB |
+
+What this shows:
+
+- On ordinary pages, the cleaned-up page reads about three times better than
+  the photo.
+- On the heavy-shadow page, the photo as shot now reads *better* than any
+  cleaned-up style. Apple's recogniser seems to have improved: with Xcode 26.6,
+  a third of the characters on this page were wrong before cleanup. Closing
+  this gap is open work.
+- Ink files are 4 to 11 times smaller than the photo.
+
+`AccuracyTests` pins every page in every style, so a change in either
+direction fails the build.
 
 ## Tests
 
-52 tests (Swift Testing) cover the engine. Some of them, by name:
+78 tests (Swift Testing) cover the engine. One of them runs only on machines
+without the on-device model, such as CI. Some of them, by name:
 
+- *Every known page reads within its error limit, in every style* (28 cases)
+- *Ink is the smallest style, and at least four times smaller than the photo*
 - *A page held steady is captured exactly once, however long it is held*
 - *Lifting the phone away and returning captures the next page*
-- *The small printed item wins over the sheet it rests on* (real photographs)
+- *The small printed item wins over the sheet it rests on*
 - *The PDF text layer is selectable and correctly ordered* (read back with PDFKit)
-- *Colour is reproduced rather than inflated*
-- *Sub-pixel refinement beats the raw grid position*
+- *A page with no text is refused before the model is asked*
 
 CI runs them on every push, and also builds the app for the iOS Simulator.
 
@@ -102,8 +126,9 @@ Models/           Core ML corner model (see NOTICE)
   rule has a test.
 - **White point from the paper, not from a percentile.** A percentile moves
   with how much ink is on the page, so the same paper came out a different
-  grey on every page. Taking the most common paper value fixed that, and cut
-  the colour output from 3548 KB to 478 KB.
+  grey on every page. Taking the most common paper value fixed that. It also
+  made colour pages much smaller: the same page went from 3548 KB before the
+  fix to 566 KB today.
 - **Thresholds the tests caught.** The first auto-capture drift limit, 0.012
   per frame, turned out to be a deliberate hand movement, not a tremor. It is
   now 0.0035, and 16 stabiliser tests cover the capture rules.
@@ -118,7 +143,10 @@ Models/           Core ML corner model (see NOTICE)
   corrected.
 - The auto-capture limits come from reasoning about hand tremor, not from
   measurements in the field.
-- Most test pages are synthetic. There are three real photographs so far.
+- All test pages are synthetic. Three real photos in `Fixtures/real` are used
+  by `scanlab`, but not by the tests yet.
+- On the heavy-shadow test page, cleanup now reads slightly worse than the
+  photo as shot (see the table above).
 - In very deep shadow, where the lighting estimate is near zero, banding can
   appear.
 
