@@ -5,10 +5,15 @@ let package = Package(
     name: "ScanEngine",
     platforms: [.iOS(.v26), .macOS(.v26)],
     products: [
-        .library(name: "ScanEngine", targets: ["ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport", "ScanExtract"]),
+        .library(name: "ScanEngine", targets: ["ScanEngine", "ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport", "ScanExtract"]),
         .executable(name: "scanlab", targets: ["scanlab"]),
     ],
     targets: [
+        // One call from photo to cleaned page, text and PDF, built on the stages below.
+        .target(
+            name: "ScanEngine",
+            dependencies: ["ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport"]
+        ),
         .target(name: "ScanCore"),
         .target(name: "ScanCapture", dependencies: ["ScanCore"]),
         .target(name: "ScanEnhance", dependencies: ["ScanCore"]),
@@ -21,7 +26,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ScanEngineTests",
-            dependencies: ["ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport", "ScanExtract"]
+            dependencies: ["ScanEngine", "ScanCore", "ScanCapture", "ScanEnhance", "ScanRecognize", "ScanExport", "ScanExtract"]
         ),
     ]
 )
