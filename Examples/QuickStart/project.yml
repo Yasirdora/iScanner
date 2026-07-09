@@ -1,0 +1,34 @@
+# Generate the Xcode project with `xcodegen generate` in this folder.
+# The generated project is committed, so the example opens without XcodeGen.
+name: QuickStart
+options:
+  bundleIdPrefix: com.example.scanengine
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  ScanEngine:
+    path: ../..
+
+targets:
+  QuickStart:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    dependencies:
+      - package: ScanEngine
+        product: ScanEngine
+    scheme: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.scanengine.quickstart
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        INFOPLIST_KEY_CFBundleDisplayName: QuickStart
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
