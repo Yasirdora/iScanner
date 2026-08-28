@@ -33,3 +33,29 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO
+
+  example:
+    name: QuickStart example — build for the iOS Simulator
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project Examples/QuickStart/QuickStart.xcodeproj \
+            -scheme QuickStart \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/QuickStart \
+            CODE_SIGNING_ALLOWED=NO
+
+  docs:
+    name: Documentation — DocC
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the documentation
+        run: |
+          xcodebuild docbuild \
+            -scheme ScanEngine \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath build/Docs
