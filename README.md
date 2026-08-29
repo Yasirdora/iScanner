@@ -28,28 +28,49 @@ measurement; the current numbers are in the table below.*
 | Export | `ScanExport` | A PDF with an invisible, selectable text layer that sits on the ink. |
 | Extract | `ScanExtract` | Typed fields and a title from the on-device Foundation Models model, when the device has one. |
 
+## Use it
+
+```swift
+import ScanEngine
+
+let scanner = DocumentScanner()
+let page = try await scanner.scan(photo)        // a CGImage
+print(page.text)                                // the text, in reading order
+try scanner.exportPDF([page], to: url, title: "Receipt")
+```
+
+`DocumentScanner` finds the page, straightens it, cleans it up and reads it.
+For a screenshot or a flat scan, where the page fills the whole image, turn
+page finding off with `DocumentScanner(options: .init(findsPage: false))` —
+see Known limits.
+
+- [`Examples/QuickStart`](Examples/QuickStart) — a small SwiftUI app: pick a
+  photo, scan it, share the PDF.
+- [Documentation](Sources/ScanEngine/ScanEngine.docc) — Getting Started and
+  one article per step, built with DocC.
+
 ## Measured, not guessed
 
 `scanlab compare` runs every enhancement style through the recogniser and
 scores it against the ground truth. CER is the character error rate: lower is
 better, 0 means every character is right.
 
-Measured with Xcode 27.0 on an Apple silicon Mac. On this ~350-character
-receipt, 0.006 is about two wrong characters.
+Measured with Xcode 27.0 on an Apple silicon Mac, with page finding off. On
+this ~350-character receipt, 0.006 is about two wrong characters.
 
 | Test page | Auto (default) | Photo as shot | Ink file vs photo |
 |---|---|---|---|
 | Ordinary receipt | 0.006 | 0.017 | 108 KB vs 1199 KB |
 | Clean receipt | 0.006 | 0.017 | 107 KB vs 499 KB |
 | Heavy shadow | 0.023 | **0.011** | 123 KB vs 1385 KB |
-| Heavy shadow, 4K | 0.011 | 0.017 | 501 KB vs 4115 KB |
+| Heavy shadow, 4K | 0.020 | 0.017 | 501 KB vs 4115 KB |
 
 What this shows:
 
 - On ordinary pages, the cleaned-up page reads about three times better than
   the photo.
-- On the heavy-shadow page, the photo as shot now reads *better* than any
-  cleaned-up style. Apple's recogniser seems to have improved: with Xcode 26.6,
+- On the heavy-shadow pages, the photo as shot now reads *better* than the
+  style Auto picks. Apple's recogniser seems to have improved: with Xcode 26.6,
   a third of the characters on this page were wrong before cleanup. Closing
   this gap is open work.
 - Ink files are 4 to 11 times smaller than the photo.
@@ -59,10 +80,13 @@ direction fails the build.
 
 ## Tests
 
-78 tests (Swift Testing) cover the engine. One of them runs only on machines
-without the on-device model, such as CI. Some of them, by name:
+86 tests (Swift Testing) cover the engine. One of them runs only on machines
+without the on-device model, such as CI. One records a known issue on
+purpose (see Known limits), so it turns red the day the issue is fixed. Some of
+them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
+- *A page photographed at an angle is found, straightened and read*
 - *Ink is the smallest style, and at least four times smaller than the photo*
 - *A page held steady is captured exactly once, however long it is held*
 - *Lifting the phone away and returning captures the next page*
@@ -70,7 +94,8 @@ without the on-device model, such as CI. Some of them, by name:
 - *The PDF text layer is selectable and correctly ordered* (read back with PDFKit)
 - *A page with no text is refused before the model is asked*
 
-CI runs them on every push, and also builds the app for the iOS Simulator.
+CI runs them on every push. It also builds the app and the QuickStart example
+for the iOS Simulator, and builds the documentation.
 
 ## Requirements
 
@@ -98,10 +123,20 @@ The app: open `Scanner.xcodeproj` and run the **Scanner** scheme. The project
 is generated from `project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 (`xcodegen generate`).
 
+The example: open `Examples/QuickStart/QuickStart.xcodeproj` and run the
+**QuickStart** scheme.
+
+The documentation: in Xcode, choose Product > Build Documentation, or run
+
+```bash
+xcodebuild docbuild -scheme ScanEngine -destination 'generic/platform=macOS'
+```
+
 ## Layout
 
 ```
 Sources/
+  ScanEngine      DocumentScanner: the one call, plus the DocC catalog
   ScanCore        value types, options, accuracy metrics
   ScanCapture     detection, candidate scoring, tracking, auto-capture rules
   ScanEnhance     perspective, lighting correction, tone, binarisation
@@ -110,6 +145,7 @@ Sources/
   ScanExtract     DocumentExtracting protocol + Foundation Models implementation
   scanlab         command-line harness
 App/              SwiftUI iPhone app: camera, corner editor, page viewer
+Examples/         QuickStart: the smallest app that uses ScanEngine
 Tests/            Swift Testing suites
 Fixtures/         test pages, ground-truth transcripts, sample outputs
 Models/           Core ML corner model (see NOTICE)
@@ -139,12 +175,21 @@ Models/           Core ML corner model (see NOTICE)
 
 ## Known limits
 
+- On an image where the page fills the whole frame, such as a screenshot, the
+  page finder picks a region *inside* the page, and a fifth to a third of the
+  text is lost. Turn page finding off for such images. A test keeps this
+  visible as a known issue.
+- The app does not use the live tracker and auto-capture rules yet; they are
+  tested engine features.
 - Curved pages, such as an open book, are not flattened. Only perspective is
   corrected.
 - The auto-capture limits come from reasoning about hand tremor, not from
   measurements in the field.
 - All test pages are synthetic. Three real photos in `Fixtures/real` are used
-  by `scanlab`, but not by the tests yet.
+  by `scanlab`, but not by the tests yet. Real photos are much harder: on five
+  phone photos of a German thermal receipt (kept private, not in this repo),
+  6–18% of the characters were wrong, against 1–2% on the synthetic pages. A
+  real test set is the most useful next step.
 - On the heavy-shadow test page, cleanup now reads slightly worse than the
   photo as shot (see the table above).
 - In very deep shadow, where the lighting estimate is near zero, banding can
