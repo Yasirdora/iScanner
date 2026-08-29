@@ -34,9 +34,10 @@ public struct DocumentScanner: Sendable {
 
         /// Whether to look for the page in the photo and straighten it.
         ///
-        /// Turn it off for images that are already a flat page, such as a
-        /// screenshot or a file from a flatbed scanner, where finding a page
-        /// inside the page can only crop something away.
+        /// Turn it off to skip page finding for images that are already a
+        /// flat page, such as a screenshot or a file from a flatbed scanner.
+        /// With it on, such an image comes back whole when it shows nothing
+        /// but the page.
         public var findsPage: Bool
 
         /// A learned corner detector, offered to the page finder as one more

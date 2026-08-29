@@ -10,9 +10,9 @@ on the next build.
 All of the scanning is in `Sources/ContentView.swift`, in `scan()`: one call
 to `DocumentScanner.scan(_:)` and one to `exportPDF(_:to:title:author:)`.
 
-Turn on "The image is already a flat page" for screenshots and scans. The
-page finder crops a page that fills the whole frame — a known issue, see the
-main README.
+Turn on "The image is already a flat page" for screenshots and scans to
+skip page finding. With it off, the page finder takes such an image whole
+when it shows nothing but the page.
 
 The project is generated from `project.yml` with
 [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`xcodegen generate`).

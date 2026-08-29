@@ -9,6 +9,8 @@ public struct DocumentCandidate: Sendable {
         case rectangle
         case textCluster
         case model
+        /// The whole photo, for a page that fills the frame.
+        case frame
     }
 
     public var quad: DocumentQuad
@@ -68,6 +70,20 @@ public struct DocumentCandidateSelector: Sendable {
     /// right way to be wrong: an extra strip of white paper costs nothing,
     /// while a clipped edge loses content the user came for.
     private static let textMargin = 0.22
+    /// Below this the segmenter is guessing rather than reporting an edge it
+    /// saw. On flat pages that fill the frame it returned shapes cut along a
+    /// shadow, at 0.34 to 0.50; around pages lying on something, 0.81 to 0.99.
+    private static let confidentSegmentation: Float = 0.7
+    /// A sharp edge, in 8-bit grey levels across two pixels of a copy at most
+    /// `edgeSampleLength` long: a step of about a sixth of the full range.
+    /// Shadow stays far below it, because it changes over many pixels.
+    private static let edgeStep = 41
+    private static let edgeSampleLength = 512.0
+    /// The share of the photo around the print that may lie on a sharp edge
+    /// while the photo still shows nothing but the page. Measured: 0.00% on
+    /// every flat test page, 1.1% and more on every page photographed lying on
+    /// something.
+    private static let maximumSurfaceEdges = 0.0025
 
     public var weights: Weights
 
@@ -108,11 +124,23 @@ public struct DocumentCandidateSelector: Sendable {
     /// instead of the longer of the two — measured at 3.3 seconds against 1.1
     /// on the same page.
     private struct Signals {
-        var segmented: DocumentQuad?
+        var segmented: (quad: DocumentQuad, confidence: Float)?
         var rectangles: [DocumentQuad]
         var lines: [TextLine]
         var salient: [CGRect]
         var predicted: DocumentQuad?
+
+        /// Whether an outline seen in the photo holds every line of print: a
+        /// rectangle, the corner model's quad, or the segmenter's when it is
+        /// sure of it.
+        func hasOutlineHolding(_ text: [CGRect], minimumSegmentation: Float) -> Bool {
+            var outlines = rectangles
+            if let segmented, segmented.confidence >= minimumSegmentation { outlines.append(segmented.quad) }
+            if let predicted { outlines.append(predicted) }
+            return outlines.contains { outline in
+                text.allSatisfy { outline.contains(CGPoint(x: $0.midX, y: $0.midY)) }
+            }
+        }
     }
 
     private func gatherSignals(in image: CGImage) async throws -> Signals {
@@ -123,7 +151,7 @@ public struct DocumentCandidateSelector: Sendable {
         async let predicted = cornerModel?.corners(in: image)
 
         return Signals(
-            segmented: try await segmented?.0,
+            segmented: try await segmented,
             rectangles: try await rectangles.map(\.0),
             lines: try await text,
             salient: try await salient,
@@ -152,15 +180,40 @@ public struct DocumentCandidateSelector: Sendable {
         // silently reduces to "segmentation, or everything else" and discards
         // every other candidate whenever Apple's segmenter succeeds.
         var quads: [(DocumentQuad, DocumentCandidate.Source)] = []
-        if let segmented = signals.segmented { quads.append((segmented, .segmentation)) }
+        if let segmented = signals.segmented { quads.append((segmented.quad, .segmentation)) }
         quads += signals.rectangles.map { ($0, .rectangle) }
         if let clustered { quads.append(clustered) }
         if let predicted = signals.predicted { quads.append((predicted, .model)) }
 
-        return quads
+        let ranked = quads
             .map { score($0.0, source: $0.1, text: textBoxes, salient: signals.salient) }
             .filter { $0.quad.area >= Self.minimumArea }
             .sorted { $0.score > $1.score }
+
+        // The page that fills the frame.
+        //
+        // Every candidate above is a region of the photo, and the area cost
+        // ranks them as if whatever lies around them were a table. On a flat
+        // page — a screenshot, a scan, a photo taken close — there is no table:
+        // the page's edges are the photo's edges. Asked for an outline anyway,
+        // the segmenter cut one along a shadow, and the scan lost a fifth to a
+        // third of the receipt's characters.
+        //
+        // So the whole photo comes first when two things hold. No outline seen
+        // in the photo holds the print, and the photo around the print shows no
+        // edge — not the border of a page, not the lines of a notepad, not the
+        // pattern of a rug.
+        guard let clustered,
+              !signals.hasOutlineHolding(textBoxes, minimumSegmentation: Self.confidentSegmentation),
+              let share = edgeShare(in: image, outside: clustered.0),
+              share <= Self.maximumSurfaceEdges
+        else { return ranked }
+
+        let frame = orient(
+            [CGPoint(x: 0, y: 1), CGPoint(x: 1, y: 1), CGPoint(x: 1, y: 0), CGPoint(x: 0, y: 0)],
+            toReadAlong: readingDirection(of: signals.lines)
+        )
+        return [score(frame, source: .frame, text: textBoxes, salient: signals.salient)] + ranked
     }
 
     public func best(in image: CGImage) async throws -> DocumentCandidate? {
@@ -207,7 +260,49 @@ public struct DocumentCandidateSelector: Sendable {
 
     // MARK: - Signals
 
-    private func segmentation(in image: CGImage) async throws -> (DocumentQuad, DocumentCandidate.Source)? {
+    /// Share of the photo outside `region` that lies on a sharp edge, or nil
+    /// when the photo cannot be drawn.
+    ///
+    /// A page lying on anything shows its own border, and usually the texture
+    /// of what is under it. The paper around the print of a flat page has
+    /// neither.
+    private func edgeShare(in image: CGImage, outside region: DocumentQuad) -> Double? {
+        let scale = min(1, Self.edgeSampleLength / Double(max(image.width, image.height)))
+        let width = max(Int(Double(image.width) * scale), 3)
+        let height = max(Int(Double(image.height) * scale), 3)
+        var grey = [UInt8](repeating: 0, count: width * height)
+        let drawn = grey.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(
+                data: buffer.baseAddress, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width,
+                space: CGColorSpaceCreateDeviceGray(),
+                bitmapInfo: CGImageAlphaInfo.none.rawValue
+            ) else { return false }
+            context.interpolationQuality = .high
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+
+        let limit = Self.edgeStep * Self.edgeStep
+        var outside = 0, edges = 0
+        for row in 1..<(height - 1) {
+            // Row 0 in memory is the top of the photo; Vision's y runs upwards.
+            let y = 1 - (Double(row) + 0.5) / Double(height)
+            for column in 1..<(width - 1) {
+                let x = (Double(column) + 0.5) / Double(width)
+                guard !region.contains(CGPoint(x: x, y: y)) else { continue }
+                outside += 1
+                let index = row * width + column
+                let dx = Int(grey[index + 1]) - Int(grey[index - 1])
+                let dy = Int(grey[index + width]) - Int(grey[index - width])
+                if dx * dx + dy * dy > limit { edges += 1 }
+            }
+        }
+        return outside == 0 ? 0 : Double(edges) / Double(outside)
+    }
+
+    private func segmentation(in image: CGImage) async throws -> (quad: DocumentQuad, confidence: Float)? {
         let request = DetectDocumentSegmentationRequest()
         guard let observation = try await ImageRequestHandler(image).perform(request) else { return nil }
         return (DocumentQuad(
@@ -215,7 +310,7 @@ public struct DocumentCandidateSelector: Sendable {
             topRight: observation.topRight.cgPoint,
             bottomRight: observation.bottomRight.cgPoint,
             bottomLeft: observation.bottomLeft.cgPoint
-        ), .segmentation)
+        ), observation.confidence)
     }
 
     private func rectangleCandidates(in image: CGImage) async throws -> [(DocumentQuad, DocumentCandidate.Source)] {

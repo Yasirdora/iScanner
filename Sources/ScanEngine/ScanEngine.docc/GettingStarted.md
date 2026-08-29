@@ -31,13 +31,11 @@ Each scanned page becomes one PDF page, in order. The text layer is invisible bu
 
 ## Flat pages and screenshots
 
-Turn page finding off when the image is already a flat page, such as a screenshot or a file from a flatbed scanner:
+An image that is already a flat page, such as a screenshot or a file from a flatbed scanner, comes back whole: when the image shows nothing but the page, the page finder takes the whole image. To skip page finding for such images, turn it off:
 
 ```swift
 let scanner = DocumentScanner(options: .init(findsPage: false))
 ```
-
-The page finder is built to tell a document from the table under it. On an image where the page fills the whole frame, it currently picks a region *inside* the page, and the crop loses text. A test keeps this visible as a known issue.
 
 ## Choose a style
 

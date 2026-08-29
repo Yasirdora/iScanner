@@ -40,9 +40,9 @@ try scanner.exportPDF([page], to: url, title: "Receipt")
 ```
 
 `DocumentScanner` finds the page, straightens it, cleans it up and reads it.
-For a screenshot or a flat scan, where the page fills the whole image, turn
-page finding off with `DocumentScanner(options: .init(findsPage: false))` —
-see Known limits.
+A screenshot or a flat scan, where the page fills the whole image, comes back
+whole. To skip page finding for such images, use
+`DocumentScanner(options: .init(findsPage: false))`.
 
 - [`Examples/QuickStart`](Examples/QuickStart) — a small SwiftUI app: pick a
   photo, scan it, share the PDF.
@@ -80,10 +80,8 @@ direction fails the build.
 
 ## Tests
 
-86 tests (Swift Testing) cover the engine. One of them runs only on machines
-without the on-device model, such as CI. One records a known issue on
-purpose (see Known limits), so it turns red the day the issue is fixed. Some of
-them, by name:
+88 tests (Swift Testing) cover the engine. One of them runs only on machines
+without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
 - *A page photographed at an angle is found, straightened and read*
@@ -175,21 +173,22 @@ Models/           Core ML corner model (see NOTICE)
 
 ## Known limits
 
-- On an image where the page fills the whole frame, such as a screenshot, the
-  page finder picks a region *inside* the page, and a fifth to a third of the
-  text is lost. Turn page finding off for such images. A test keeps this
-  visible as a known issue.
+- On a flat page with a picture or a logo away from its text, the page finder
+  can still keep only part of the page. With a logo in a corner of the
+  ordinary receipt, it kept the text and lost the logo. Turn page finding off
+  for such images.
 - The app does not use the live tracker and auto-capture rules yet; they are
   tested engine features.
 - Curved pages, such as an open book, are not flattened. Only perspective is
   corrected.
 - The auto-capture limits come from reasoning about hand tremor, not from
   measurements in the field.
-- All test pages are synthetic. Three real photos in `Fixtures/real` are used
-  by `scanlab`, but not by the tests yet. Real photos are much harder: on five
-  phone photos of a German thermal receipt (kept private, not in this repo),
-  6–18% of the characters were wrong, against 1–2% on the synthetic pages. A
-  real test set is the most useful next step.
+- The accuracy tests use synthetic pages only. Three real photos in
+  `Fixtures/real` have no transcript; `scanlab` and one page-finding test use
+  them. Real photos are much harder: on five phone photos of a German thermal
+  receipt (kept private, not in this repo), 6–18% of the characters were
+  wrong, against 1–2% on the synthetic pages. A real test set is the most
+  useful next step.
 - On the heavy-shadow test page, cleanup now reads slightly worse than the
   photo as shot (see the table above).
 - In very deep shadow, where the lighting estimate is near zero, banding can
