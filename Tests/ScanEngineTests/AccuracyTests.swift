@@ -50,11 +50,12 @@ struct AccuracyCase: CustomTestStringConvertible, Sendable {
     var limit: Double { measured + Self.margin }
     var testDescription: String { "\(page) · \(style.title)" }
 
-    /// Measured with `scanlab compare` semantics: enhance with the style's
-    /// preset, recognise, compare against the transcript.
+    /// Measured the way a caller reads a page: enhance in the style — Auto
+    /// first reads the page and chooses one — recognise, compare against the
+    /// transcript.
     static let all: [AccuracyCase] = [
         // An ordinary capture: some shadow, nothing extreme.
-        .init(page: "receipt", style: .auto, measured: 0.0057),
+        .init(page: "receipt", style: .auto, measured: 0.0057),  // chooses Colour
         .init(page: "receipt", style: .enhanced, measured: 0.0057),
         .init(page: "receipt", style: .color, measured: 0.0057),
         .init(page: "receipt", style: .light, measured: 0.0115),
@@ -62,7 +63,7 @@ struct AccuracyCase: CustomTestStringConvertible, Sendable {
         .init(page: "receipt", style: .bitonal, measured: 0.0143),
         .init(page: "receipt", style: .original, measured: 0.0172),
         // A clean capture.
-        .init(page: "receipt-clean", style: .auto, measured: 0.0057),
+        .init(page: "receipt-clean", style: .auto, measured: 0.0057),  // chooses Colour
         .init(page: "receipt-clean", style: .enhanced, measured: 0.0057),
         .init(page: "receipt-clean", style: .color, measured: 0.0057),
         .init(page: "receipt-clean", style: .light, measured: 0.0115),
@@ -72,7 +73,7 @@ struct AccuracyCase: CustomTestStringConvertible, Sendable {
         // A heavy shadow. Here the photo as shot currently reads *better* than
         // every cleaned style — the README says so, and these limits pin both
         // sides so a change in either direction is seen.
-        .init(page: "receipt-hard", style: .auto, measured: 0.0229),
+        .init(page: "receipt-hard", style: .auto, measured: 0.0229),  // chooses Enhance
         .init(page: "receipt-hard", style: .enhanced, measured: 0.0229),
         .init(page: "receipt-hard", style: .color, measured: 0.0229),
         .init(page: "receipt-hard", style: .light, measured: 0.0258),
@@ -80,7 +81,7 @@ struct AccuracyCase: CustomTestStringConvertible, Sendable {
         .init(page: "receipt-hard", style: .bitonal, measured: 0.0229),
         .init(page: "receipt-hard", style: .original, measured: 0.0115),
         // The same heavy shadow at phone resolution.
-        .init(page: "receipt-hard-4k", style: .auto, measured: 0.0115),
+        .init(page: "receipt-hard-4k", style: .auto, measured: 0.0201),  // chooses Enhance
         .init(page: "receipt-hard-4k", style: .enhanced, measured: 0.0201),
         .init(page: "receipt-hard-4k", style: .color, measured: 0.0115),
         .init(page: "receipt-hard-4k", style: .light, measured: 0.0172),
@@ -91,8 +92,13 @@ struct AccuracyCase: CustomTestStringConvertible, Sendable {
 }
 
 /// Error rate of one page read in one style.
+///
+/// The one-argument `enhance` is the call a caller makes: for Auto it reads the
+/// page and chooses a style, then uses that style's preset. Passing `.auto`
+/// with explicit options skips the choice and takes the Colour path, which is
+/// what the Auto rows measured before: 0.0115 instead of 0.0201 at 4K.
 private func errorRate(page: String, style: ScanStyle) async throws -> Double {
-    let enhanced = try DocumentEnhancer().enhance(try knownPage(page), style: style, options: .preset(for: style))
+    let enhanced = try DocumentEnhancer().enhance(try knownPage(page), style: style)
     let reading = try await DocumentRecognizer().recognize(enhanced)
     return TextAccuracy.characterErrorRate(recognized: reading.transcript, truth: try knownTranscript(page))
 }
