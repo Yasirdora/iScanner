@@ -114,14 +114,14 @@ private func pngSize(_ image: CGImage) throws -> Int {
     return data.length
 }
 
-@Test("Every known page reads within its error limit, in every style", arguments: AccuracyCase.all)
+@Test("Every known page reads within its error limit, in every style", .needsVision, arguments: AccuracyCase.all)
 func readsWithinTheLimit(_ check: AccuracyCase) async throws {
     let rate = try await errorRate(page: check.page, style: check.style)
     #expect(rate <= check.limit,
             "\(check.page) in \(check.style.title): error rate \(rate), limit \(check.limit)")
 }
 
-@Test("On an ordinary page, the default style reads better than the photo as shot",
+@Test("On an ordinary page, the default style reads better than the photo as shot", .needsVision,
       arguments: ["receipt", "receipt-clean"])
 func cleanupHelpsAnOrdinaryPage(_ page: String) async throws {
     // Measured: 0.0057 against 0.0172, about two characters wrong instead of

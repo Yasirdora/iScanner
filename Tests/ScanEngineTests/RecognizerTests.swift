@@ -12,7 +12,7 @@ private func readCleanReceipt() async throws -> PageRecognition {
     try await DocumentRecognizer().recognize(try knownPage("receipt-clean"))
 }
 
-@Test("Lines come out in reading order, top to bottom")
+@Test("Lines come out in reading order, top to bottom", .needsVision)
 func linesFollowReadingOrder() async throws {
     let reading = try await readCleanReceipt()
     #expect(reading.runs.count >= 20)
@@ -33,7 +33,7 @@ func linesFollowReadingOrder() async throws {
     #expect(positions == positions.sorted(), "landmarks out of order in: \(transcript)")
 }
 
-@Test("Every line box lies inside the page")
+@Test("Every line box lies inside the page", .needsVision)
 func boxesStayOnThePage() async throws {
     let reading = try await readCleanReceipt()
     let page = CGRect(x: 0, y: 0, width: 1, height: 1).insetBy(dx: -0.001, dy: -0.001)
@@ -44,7 +44,7 @@ func boxesStayOnThePage() async throws {
     }
 }
 
-@Test("Line boxes sit where the text is printed")
+@Test("Line boxes sit where the text is printed", .needsVision)
 func boxesMatchThePrintedLayout() async throws {
     // Lower-left origin, as Vision and PDF use it: the heading is near the
     // top of the page, the total a little below the middle.
@@ -57,7 +57,7 @@ func boxesMatchThePrintedLayout() async throws {
     #expect(abs(heading.boundingBox.minX - total.boundingBox.minX) < 0.01, "left margin is not shared")
 }
 
-@Test("A blank page reads as no text at all")
+@Test("A blank page reads as no text at all", .needsVision)
 func blankPageHasNoText() async throws {
     let context = try #require(CGContext(
         data: nil, width: 600, height: 800,
@@ -73,7 +73,7 @@ func blankPageHasNoText() async throws {
     #expect(reading.runs.isEmpty)
 }
 
-@Test("Reading the same page twice gives the same result")
+@Test("Reading the same page twice gives the same result", .needsVision)
 func recognitionIsRepeatable() async throws {
     // The accuracy limits assume this. If Vision ever stops being repeatable,
     // this fails first and says why the others became flaky.
@@ -82,7 +82,7 @@ func recognitionIsRepeatable() async throws {
     #expect(first == second)
 }
 
-@Test("The phone number and the address are found as data, not just text")
+@Test("The phone number and the address are found as data, not just text", .needsVision)
 func structuredDataIsDetected() async throws {
     let detected = try await readCleanReceipt().detected
     #expect(detected.contains(DetectedValue(kind: .phoneNumber, value: "(503) 555-0182")), "found: \(detected)")
@@ -90,7 +90,7 @@ func structuredDataIsDetected() async throws {
             "found: \(detected)")
 }
 
-@Test("The item list is found as a table, with its prices in it")
+@Test("The item list is found as a table, with its prices in it", .needsVision)
 func itemListIsATable() async throws {
     let tables = try await readCleanReceipt().tables
     let cells = tables.flatMap { $0.rows.flatMap { $0 } }

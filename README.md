@@ -92,8 +92,12 @@ without the on-device model, such as CI. Some of them, by name:
 - *The PDF text layer is selectable and correctly ordered* (read back with PDFKit)
 - *A page with no text is refused before the model is asked*
 
-CI runs them on every push. It also builds the app and the QuickStart example
-for the iOS Simulator, and builds the documentation.
+CI runs them on every push. Vision's recogniser and page detectors do not run
+on GitHub's virtual Macs: every request fails there with `unknownError`. So on
+CI, the tests that need Vision are skipped with that reason; on a real Mac
+nothing is skipped, and every test runs before each commit. CI also builds the
+app and the QuickStart example for the iOS Simulator, and builds the
+documentation.
 
 ## Requirements
 

@@ -262,7 +262,7 @@ func nestedDocumentScene(withInnerItem: Bool) -> CGImage {
     return context.makeImage()!
 }
 
-@Test("The small printed item wins over the sheet it rests on")
+@Test("The small printed item wins over the sheet it rests on", .needsVision)
 func picksTheItemNotTheSurface() async throws {
     // Vision's segmenter returns one answer and, on nested rectangles, reliably
     // returns the largest — a voucher on a notepad comes back as the notepad,
@@ -279,7 +279,7 @@ func picksTheItemNotTheSurface() async throws {
     #expect(abs(centre.midX - 0.51) < 0.08 && abs(centre.midY - 0.50) < 0.08)
 }
 
-@Test("A page that fills the frame is still chosen when it is the subject")
+@Test("A page that fills the frame is still chosen when it is the subject", .needsVision)
 func picksThePageWhenItIsTheSubject() async throws {
     // The scorer penalises candidates that fill the frame, because those are
     // usually the surface. That must not cost the ordinary case, where the

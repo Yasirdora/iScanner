@@ -60,7 +60,7 @@ private func errorRate(of page: ScannedPage) throws -> Double {
     TextAccuracy.characterErrorRate(recognized: page.text, truth: try knownTranscript("receipt"))
 }
 
-@Test("A page photographed at an angle is found, straightened and read")
+@Test("A page photographed at an angle is found, straightened and read", .needsVision)
 func photographedPageIsScanned() async throws {
     let page = try await DocumentScanner().scan(try photographedReceipt())
 
@@ -71,7 +71,7 @@ func photographedPageIsScanned() async throws {
     #expect(rate <= 0.0115 + AccuracyCase.margin, "error rate \(rate)")
 }
 
-@Test("A requested style is used as asked")
+@Test("A requested style is used as asked", .needsVision)
 func requestedStyleIsUsed() async throws {
     let page = try await DocumentScanner(options: .init(style: .bitonal)).scan(try photographedReceipt())
     #expect(page.style == .bitonal)
@@ -79,7 +79,7 @@ func requestedStyleIsUsed() async throws {
     #expect(try errorRate(of: page) <= AccuracyCase.margin)
 }
 
-@Test("Auto reports the style it chose, never Auto itself")
+@Test("Auto reports the style it chose, never Auto itself", .needsVision)
 func autoReportsItsChoice() async throws {
     let flat = DocumentScanner(options: .init(findsPage: false))
     // Measured: Colour for the clean receipt, Enhance for the shadowed one.
@@ -87,7 +87,7 @@ func autoReportsItsChoice() async throws {
     #expect(try await flat.scan(try knownPage("receipt-hard")).style == .enhanced)
 }
 
-@Test("With page finding off, a flat page is cleaned as it is and read within its limit",
+@Test("With page finding off, a flat page is cleaned as it is and read within its limit", .needsVision,
       arguments: [("receipt", 0.0057), ("receipt-clean", 0.0057), ("receipt-hard", 0.0229), ("receipt-hard-4k", 0.0201)])
 func flatPageIsReadWhole(_ name: String, _ measured: Double) async throws {
     let photo = try knownPage(name)
@@ -99,7 +99,7 @@ func flatPageIsReadWhole(_ name: String, _ measured: Double) async throws {
     #expect(rate <= measured + AccuracyCase.margin, "\(name): error rate \(rate)")
 }
 
-@Test("A flat page that fills the frame is read whole with page finding on",
+@Test("A flat page that fills the frame is read whole with page finding on", .needsVision,
       arguments: [("receipt", 0.0057), ("receipt-clean", 0.0057), ("receipt-hard", 0.0229), ("receipt-hard-4k", 0.0201)])
 func pageFillingTheFrameIsNotCropped(_ name: String, _ measured: Double) async throws {
     // This was a known issue. The finder took a region inside the page — the
@@ -116,7 +116,7 @@ func pageFillingTheFrameIsNotCropped(_ name: String, _ measured: Double) async t
     #expect(rate <= measured + AccuracyCase.margin, "\(name): error rate \(rate)")
 }
 
-@Test("A page on a plain table is found by its edges, even when its print runs close to them")
+@Test("A page on a plain table is found by its edges, even when its print runs close to them", .needsVision)
 func pageOnAPlainTableIsNotTakenWhole() async throws {
     // The table around the print has no edge in it, as a flat page has none.
     // What tells them apart is the page's own outline, which holds the print.
@@ -126,7 +126,7 @@ func pageOnAPlainTableIsNotTakenWhole() async throws {
     #expect(abs(best.quad.area - 0.262) < 0.02, "took \(best.quad.area) of the photo")
 }
 
-@Test("A card on a notepad is found inside the photo, not taken whole",
+@Test("A card on a notepad is found inside the photo, not taken whole", .needsVision,
       arguments: ["real/7792", "real/7793", "real/7794"])
 func cardOnANotepadIsNotTakenWhole(_ name: String) async throws {
     // Three real photos: no outline around the card is seen, as on a flat
@@ -137,7 +137,7 @@ func cardOnANotepadIsNotTakenWhole(_ name: String) async throws {
     #expect(best.quad.area < 0.2, "\(name): took \(best.quad.area) of the photo")
 }
 
-@Test("When no page is found, the whole photo is used and the result says so")
+@Test("When no page is found, the whole photo is used and the result says so", .needsVision)
 func noPageMeansTheWholePhoto() async throws {
     let photo = try emptySurface()
     let page = try await DocumentScanner().scan(photo)
@@ -148,7 +148,7 @@ func noPageMeansTheWholePhoto() async throws {
     #expect(page.text.isEmpty)
 }
 
-@Test("Export writes one searchable PDF page per scanned page, with its title")
+@Test("Export writes one searchable PDF page per scanned page, with its title", .needsVision)
 func exportWritesEveryPage() async throws {
     let scanner = DocumentScanner(options: .init(findsPage: false))
     let pages = [
