@@ -1,3 +1,4 @@
+import ImageIO
 import PhotosUI
 import ScanCapture
 import ScanCore
@@ -265,9 +266,31 @@ struct ScanView: View {
         Task {
             defer { photoItem = nil }
             guard let data = try? await item.loadTransferable(type: Data.self),
-                  let image = UIImage(data: data) else { return }
+                  let image = Self.uprightImage(from: data) else { return }
             await findPage(in: image, retake: false)
         }
+    }
+
+    /// Decodes an imported photo the right way up.
+    ///
+    /// A phone photo stores its pixels as the sensor saw them, usually on their
+    /// side, and its rotation as metadata. `UIImage(data:)` keeps that rotation
+    /// as `imageOrientation`, which views honour and `cgImage` does not — so
+    /// the page was found in the sideways bitmap, and its outline drawn over the
+    /// upright picture a quarter turn off. Decoding with the rotation applied
+    /// gives detection, the corner editor and flattening one picture to share.
+    /// The long side is capped at 4032 pixels, a 12-megapixel photo.
+    private static func uprightImage(from data: Data) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 4032,
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        return UIImage(cgImage: image)
     }
 
     // MARK: - Presentation
