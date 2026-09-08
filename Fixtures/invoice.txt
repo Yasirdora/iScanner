@@ -1,0 +1,25 @@
+Musterfirma GmbH
+Musterstraße 12, 12345 Musterstadt
+USt-IdNr. DE123456789
+
+Max Mustermann
+Beispielweg 3
+54321 Beispielhausen
+
+RECHNUNG Nr. RE-2026-0815
+Rechnungsdatum: 14.10.2026
+Leistungsdatum: 10.10.2026
+
+Pos Beschreibung          Menge    Betrag
+1   Beratung (Stunden)        4  340,00 €
+2   Webhosting Jahrespaket    1  129,00 €
+3   Versandpauschale          1    4,90 €
+
+Nettobetrag                      473,90 €
+zzgl. 19 % USt.                   90,04 €
+Gesamtbetrag                     563,94 €
+
+Zahlbar bis 28.10.2026 ohne Abzug.
+IBAN: DE89 3704 0044 0532 0130 00
+BIC: COBADEFFXXX
+Verwendungszweck: RE-2026-0815

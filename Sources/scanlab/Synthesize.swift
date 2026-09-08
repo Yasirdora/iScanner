@@ -50,6 +50,23 @@ enum Synthesizer {
         var isCleanlyLit: Bool { self == .clean || self == .colour }
     }
 
+    /// What is printed on the page.
+    enum Document: String, CaseIterable {
+        /// An American hardware-store receipt. The original accuracy fixture.
+        case receipt
+        /// A German invoice ("Rechnung") from a fictional company: umlauts,
+        /// ß, the euro sign, decimal commas, a VAT line, an IBAN and a payment
+        /// reference — the fields a German bill is scanned for.
+        case invoice
+
+        var text: String {
+            switch self {
+            case .receipt: baseGroundTruth
+            case .invoice: invoiceGroundTruth
+            }
+        }
+    }
+
     /// Roughly a US Letter page at 200 dpi.
     static let pageSize = CGSize(width: 1700, height: 2200)
 
@@ -59,8 +76,8 @@ enum Synthesizer {
     /// regression and is only bookkeeping.
     static let stampText = "PAID"
 
-    static func groundTruth(for difficulty: Difficulty) -> String {
-        difficulty.hasColour ? baseGroundTruth + "\n" + stampText : baseGroundTruth
+    static func groundTruth(for difficulty: Difficulty, document: Document = .receipt) -> String {
+        difficulty.hasColour ? document.text + "\n" + stampText : document.text
     }
 
     static let baseGroundTruth = """
@@ -87,14 +104,51 @@ enum Synthesizer {
     Returns accepted within 30 days
     """
 
-    static func makePage(difficulty: Difficulty = .normal) throws -> CGImage {
-        let clean = try renderText(difficulty: difficulty)
-        return shade(clean, difficulty: difficulty)
+    /// Every name, number and account here is a sample value: Musterfirma and
+    /// Mustermann are the German placeholder names, DE123456789 is the usual
+    /// example VAT number, and the IBAN is the example used in banking
+    /// documentation. The sums are correct: 473,90 € net plus 19 % is 563,94 €.
+    static let invoiceGroundTruth = """
+    Musterfirma GmbH
+    Musterstraße 12, 12345 Musterstadt
+    USt-IdNr. DE123456789
+
+    Max Mustermann
+    Beispielweg 3
+    54321 Beispielhausen
+
+    RECHNUNG Nr. RE-2026-0815
+    Rechnungsdatum: 14.10.2026
+    Leistungsdatum: 10.10.2026
+
+    Pos Beschreibung          Menge    Betrag
+    1   Beratung (Stunden)        4  340,00 €
+    2   Webhosting Jahrespaket    1  129,00 €
+    3   Versandpauschale          1    4,90 €
+
+    Nettobetrag                      473,90 €
+    zzgl. 19 % USt.                   90,04 €
+    Gesamtbetrag                     563,94 €
+
+    Zahlbar bis 28.10.2026 ohne Abzug.
+    IBAN: DE89 3704 0044 0532 0130 00
+    BIC: COBADEFFXXX
+    Verwendungszweck: RE-2026-0815
+    """
+
+    static func makePage(
+        difficulty: Difficulty = .normal,
+        document: Document = .receipt,
+        onTable: Bool = false
+    ) throws -> CGImage {
+        let clean = try renderText(difficulty: difficulty, document: document)
+        let page = shade(clean, difficulty: difficulty)
+        return onTable ? placeOnTable(page) : page
     }
 
     // MARK: - Text
 
-    private static func renderText(difficulty: Difficulty) throws -> CGImage {
+    private static func renderText(difficulty: Difficulty, document: Document) throws -> CGImage {
         guard let context = CGContext(
             data: nil,
             width: Int(pageSize.width),
@@ -134,7 +188,7 @@ enum Synthesizer {
         if difficulty.hasColour { drawColourElements(in: context) }
 
         var y = pageSize.height - 220
-        for rawLine in baseGroundTruth.components(separatedBy: "\n") {
+        for rawLine in document.text.components(separatedBy: "\n") {
             defer { y -= 62 }
             guard !rawLine.trimmingCharacters(in: .whitespaces).isEmpty else { continue }
 
@@ -228,6 +282,32 @@ enum Synthesizer {
             }
             line += 1
         }
+    }
+
+    // MARK: - Scene
+
+    /// The page photographed at an angle on a dark table, covering about half
+    /// the frame: what a phone camera actually hands the page finder.
+    private static func placeOnTable(_ page: CGImage) -> CGImage {
+        let width = 2400.0, height = 3000.0
+        let frame = CGRect(x: 0, y: 0, width: width, height: height)
+        let tilt = CIFilter.perspectiveTransform()
+        tilt.inputImage = CIImage(cgImage: page)
+        tilt.topLeft = CGPoint(x: 0.22 * width, y: 0.84 * height)
+        tilt.topRight = CGPoint(x: 0.74 * width, y: 0.80 * height)
+        tilt.bottomRight = CGPoint(x: 0.80 * width, y: 0.16 * height)
+        tilt.bottomLeft = CGPoint(x: 0.16 * width, y: 0.20 * height)
+
+        // A table lit from one side, darker away from the light.
+        let table = CIFilter.linearGradient()
+        table.point0 = CGPoint(x: 0, y: height)
+        table.point1 = CGPoint(x: width, y: 0)
+        table.color0 = CIColor(red: 0.30, green: 0.24, blue: 0.19)
+        table.color1 = CIColor(red: 0.13, green: 0.10, blue: 0.08)
+
+        guard let tilted = tilt.outputImage,
+              let surface = table.outputImage?.cropped(to: frame) else { return page }
+        return CIContext().createCGImage(tilted.composited(over: surface), from: frame) ?? page
     }
 
     // MARK: - Lighting

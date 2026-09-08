@@ -85,9 +85,11 @@ USAGE
   scanlab extract <image>
       Enhance, recognise, then pull typed fields with the on-device model.
 
-  scanlab synth <output.png> [--difficulty normal|hard]
+  scanlab synth <output.png> [--difficulty clean|normal|hard|colour|notes]
+                             [--document receipt|invoice] [--on-table]
       Write a synthetic shadowed page plus its exact ground-truth transcript,
-      for regressing the pipeline before a real corpus exists.
+      for regressing the pipeline before a real corpus exists. `invoice` is a
+      German bill; `--on-table` photographs the page at an angle on a table.
 """
 
 // MARK: - Metrics
@@ -117,6 +119,8 @@ struct Arguments {
     var input: URL
     var style: ScanStyle = .color
     var difficulty: String = "normal"
+    var document: String = "receipt"
+    var onTable = false
     var drawTo: URL?
     var inkGamma: Double = EnhancementOptions.default.inkGamma
     var asJSON = false
@@ -142,6 +146,13 @@ struct Arguments {
                 guard index + 1 < argv.count else { throw CLIError.usage }
                 difficulty = argv[index + 1]
                 index += 2
+            case "--document":
+                guard index + 1 < argv.count else { throw CLIError.usage }
+                document = argv[index + 1]
+                index += 2
+            case "--on-table":
+                onTable = true
+                index += 1
             case "--json":
                 asJSON = true
                 index += 1
@@ -319,7 +330,11 @@ func extract(_ args: Arguments) async throws {
 
 func synth(_ args: Arguments) throws {
     let difficulty = Synthesizer.Difficulty(rawValue: args.difficulty) ?? .normal
-    let page = try Synthesizer.makePage(difficulty: difficulty)
+    guard let document = Synthesizer.Document(rawValue: args.document) else { throw CLIError.usage }
+    // The invoice has its own layout; the colour marks and the ruled notes page
+    // are drawn for the receipt only.
+    if document != .receipt && difficulty.hasColour { throw CLIError.usage }
+    let page = try Synthesizer.makePage(difficulty: difficulty, document: document, onTable: args.onTable)
     let output = args.input
     try FileManager.default.createDirectory(
         at: output.deletingLastPathComponent(), withIntermediateDirectories: true
@@ -338,7 +353,8 @@ func synth(_ args: Arguments) throws {
     if difficulty.hasColour {
         try? FileManager.default.removeItem(at: truthURL)
     } else {
-        try Synthesizer.groundTruth(for: difficulty).write(to: truthURL, atomically: true, encoding: .utf8)
+        try Synthesizer.groundTruth(for: difficulty, document: document)
+            .write(to: truthURL, atomically: true, encoding: .utf8)
     }
 
     print("wrote \(output.path)")

@@ -57,11 +57,12 @@ public struct DocumentRecognizer: Sendable {
             return PageRecognition()
         }
 
+        let transcript = document.text.transcript
         return PageRecognition(
-            transcript: document.text.transcript,
+            transcript: transcript,
             runs: textRuns(in: document),
             tables: document.tables.map(convert),
-            detected: document.text.detectedData.compactMap(convert),
+            detected: document.text.detectedData.compactMap(convert) + payments(in: transcript),
             barcodes: document.barcodes.compactMap(\.payloadString)
         )
     }
@@ -108,7 +109,10 @@ public struct DocumentRecognizer: Sendable {
                 .init(kind: .calendarEvent, value: ISO8601DateFormatter().string(from: $0))
             }
         case .moneyAmount(let money):
-            .init(kind: .money, value: "\(money.currency.identifier) \(money.amount)")
+            // Two decimals, always: the detector's amount is a Decimal made
+            // from a binary floating-point value, and printed as it is,
+            // 563,94 € reads back as "563.9400000000001024".
+            .init(kind: .money, value: "\(money.currency.identifier) \(money.amount.formatted(Self.amountFormat))")
         case .measurement(let measurement):
             .init(kind: .measurement, value: "\(measurement.value)")
         case .flightNumber(let flight):
@@ -120,6 +124,16 @@ public struct DocumentRecognizer: Sendable {
         @unknown default:
             nil
         }
+    }
+
+    private static let amountFormat = Decimal.FormatStyle(locale: Locale(identifier: "en_US_POSIX"))
+        .precision(.fractionLength(2))
+        .grouping(.never)
+
+    /// IBANs with valid check digits, which Vision's data detection does not
+    /// report. See `IBAN`.
+    private func payments(in transcript: String) -> [DetectedValue] {
+        IBAN.find(in: transcript).map { DetectedValue(kind: .paymentIdentifier, value: $0) }
     }
 
     // MARK: - Geometry
