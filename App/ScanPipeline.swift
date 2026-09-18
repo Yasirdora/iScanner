@@ -79,9 +79,7 @@ final class ScanPipeline {
     private(set) var pages: [PageItem] = []
 
     private let renderer = PageRenderer()
-    /// The learned detector is optional: if the model is missing or fails to
-    /// load, detection carries on with the other candidate sources.
-    private let selector = DocumentCandidateSelector(cornerModel: CoreMLCornerDetector.bundled())
+    private let selector = DocumentCandidateSelector()
     private let recognizer = DocumentRecognizer()
     private let exporter = SearchablePDFBuilder()
     private let extractor = FoundationModelExtractor()

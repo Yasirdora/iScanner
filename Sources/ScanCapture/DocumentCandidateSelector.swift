@@ -8,7 +8,6 @@ public struct DocumentCandidate: Sendable {
         case segmentation
         case rectangle
         case textCluster
-        case model
         /// The whole photo, for a page that fills the frame.
         case frame
     }
@@ -87,15 +86,8 @@ public struct DocumentCandidateSelector: Sendable {
 
     public var weights: Weights
 
-    /// Optional learned corner detector, ranked alongside every other source.
-    private let cornerModel: (any DocumentCornerPredicting)?
-
-    public init(
-        weights: Weights = .init(),
-        cornerModel: (any DocumentCornerPredicting)? = nil
-    ) {
+    public init(weights: Weights = .init()) {
         self.weights = weights
-        self.cornerModel = cornerModel
     }
 
     /// Counts of each raw signal, for diagnosing a scorer that is silently
@@ -119,24 +111,19 @@ public struct DocumentCandidateSelector: Sendable {
 
     /// Everything the scorer needs, collected once.
     ///
-    /// All five detectors run concurrently, including the learned one. Awaiting
-    /// the model after the others finished made a request cost the sum of both
-    /// instead of the longer of the two — measured at 3.3 seconds against 1.1
-    /// on the same page.
+    /// All four detectors run concurrently, so a request costs the slowest of
+    /// them rather than their sum.
     private struct Signals {
         var segmented: (quad: DocumentQuad, confidence: Float)?
         var rectangles: [DocumentQuad]
         var lines: [TextLine]
         var salient: [CGRect]
-        var predicted: DocumentQuad?
 
         /// Whether an outline seen in the photo holds every line of print: a
-        /// rectangle, the corner model's quad, or the segmenter's when it is
-        /// sure of it.
+        /// rectangle, or the segmenter's when it is sure of it.
         func hasOutlineHolding(_ text: [CGRect], minimumSegmentation: Float) -> Bool {
             var outlines = rectangles
             if let segmented, segmented.confidence >= minimumSegmentation { outlines.append(segmented.quad) }
-            if let predicted { outlines.append(predicted) }
             return outlines.contains { outline in
                 text.allSatisfy { outline.contains(CGPoint(x: $0.midX, y: $0.midY)) }
             }
@@ -148,14 +135,12 @@ public struct DocumentCandidateSelector: Sendable {
         async let rectangles = rectangleCandidates(in: image)
         async let text = textLines(in: image)
         async let salient = salientBoxes(in: image)
-        async let predicted = cornerModel?.corners(in: image)
 
         return Signals(
             segmented: try await segmented,
             rectangles: try await rectangles.map(\.0),
             lines: try await text,
-            salient: try await salient,
-            predicted: await predicted?.quad
+            salient: try await salient
         )
     }
 
@@ -183,7 +168,6 @@ public struct DocumentCandidateSelector: Sendable {
         if let segmented = signals.segmented { quads.append((segmented.quad, .segmentation)) }
         quads += signals.rectangles.map { ($0, .rectangle) }
         if let clustered { quads.append(clustered) }
-        if let predicted = signals.predicted { quads.append((predicted, .model)) }
 
         let ranked = quads
             .map { score($0.0, source: $0.1, text: textBoxes, salient: signals.salient) }

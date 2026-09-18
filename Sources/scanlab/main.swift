@@ -440,16 +440,9 @@ func draw(_ candidates: [DocumentCandidate], on image: CGImage) -> CGImage {
 
 func candidates(_ args: Arguments) async throws {
     let image = try loadImage(args.input)
-    // The learned detector is loaded here rather than in the app so its
-    // decoding is exercised by the same harness that scores everything else.
-    var model: CoreMLCornerDetector?
-    let package = URL(fileURLWithPath: "Models/DocumentCorners.mlpackage")
-    if FileManager.default.fileExists(atPath: package.path) {
-        model = try? CoreMLCornerDetector.compiling(at: package)
-    }
-    let found = try await DocumentCandidateSelector(cornerModel: model).candidates(in: image)
+    let found = try await DocumentCandidateSelector().candidates(in: image)
 
-    let counts = try await DocumentCandidateSelector(cornerModel: model).signalCounts(in: image)
+    let counts = try await DocumentCandidateSelector().signalCounts(in: image)
     print("\(args.input.lastPathComponent) — \(found.count) candidates, best first")
     print("signals: \(counts.rectangles) rectangles, segmentation=\(counts.hasSegmentation), \(counts.textBoxes) text boxes, \(counts.salientBoxes) salient objects\n")
     print(String(format: "%-14@ %8@ %8@ %8@ %8@ %8@",

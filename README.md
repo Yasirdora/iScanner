@@ -20,7 +20,7 @@ measurement; the current numbers are in the table below.*
 
 | Step | Module | How |
 |---|---|---|
-| Find the page | `ScanCapture` | Vision's document segmenter on every frame, a slower candidate scorer that also finds small items, and a Core ML corner model. A tracker decides which answer to trust. |
+| Find the page | `ScanCapture` | Vision's document segmenter on every frame, and a slower candidate scorer that also finds small items. A tracker decides which answer to trust. |
 | Capture | `ScanCapture` | Auto-capture fires once when the page holds still, then waits until the page changes. |
 | Flatten | `ScanEnhance` | Perspective correction from the same four corners the viewfinder showed. |
 | Clean up | `ScanEnhance` | Flat-field lighting correction, document tone mapping and Otsu binarisation, in Core Image. |
@@ -150,7 +150,6 @@ App/              SwiftUI iPhone app: camera, corner editor, page viewer
 Examples/         QuickStart: the smallest app that uses ScanEngine
 Tests/            Swift Testing suites
 Fixtures/         test pages, ground-truth transcripts, sample outputs
-Models/           Core ML corner model (see NOTICE)
 ```
 
 ## Design notes
@@ -201,7 +200,3 @@ Models/           Core ML corner model (see NOTICE)
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
-`Models/DocumentCorners.mlpackage` is converted from
-[DocAligner](https://github.com/DocsaidLab/DocAligner) by Ze Yuan (DocsaidLab)
-and stays under the Apache License 2.0. See [NOTICE](NOTICE).

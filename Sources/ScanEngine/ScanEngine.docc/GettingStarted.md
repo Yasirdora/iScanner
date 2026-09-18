@@ -55,13 +55,4 @@ let scanner = DocumentScanner(options: .init(style: .bitonal))
 | `.bitonal` | Two tones and the smallest files. |
 | `.original` | Untouched. |
 
-## Use a corner model
-
-The page finder can also use a learned corner detector. The package does not bundle a model; load one with Core ML and pass it in:
-
-```swift
-let detector = CoreMLCornerDetector(model: try MLModel(contentsOf: compiledModelURL))
-let scanner = DocumentScanner(options: .init(cornerModel: detector))
-```
-
 The example app in `Examples/QuickStart` shows the whole flow in about 100 lines.

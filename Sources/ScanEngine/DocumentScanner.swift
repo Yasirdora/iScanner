@@ -40,23 +40,16 @@ public struct DocumentScanner: Sendable {
         /// but the page.
         public var findsPage: Bool
 
-        /// A learned corner detector, offered to the page finder as one more
-        /// candidate. The package does not bundle a model; create one with
-        /// `CoreMLCornerDetector(model:)`.
-        public var cornerModel: (any DocumentCornerPredicting)?
-
         /// Settings for text recognition: languages, custom words, barcodes.
         public var recognition: DocumentRecognizer.Options
 
         public init(
             style: ScanStyle = .auto,
             findsPage: Bool = true,
-            cornerModel: (any DocumentCornerPredicting)? = nil,
             recognition: DocumentRecognizer.Options = .default
         ) {
             self.style = style
             self.findsPage = findsPage
-            self.cornerModel = cornerModel
             self.recognition = recognition
         }
     }
@@ -76,7 +69,7 @@ public struct DocumentScanner: Sendable {
         var outline: DocumentQuad?
         var flat = photo
         if options.findsPage,
-           let found = try await DocumentCandidateSelector(cornerModel: options.cornerModel).best(in: photo) {
+           let found = try await DocumentCandidateSelector().best(in: photo) {
             outline = found.quad
             flat = try PerspectiveRectifier().rectify(
                 photo,

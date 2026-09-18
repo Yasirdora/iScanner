@@ -12,7 +12,6 @@
 		26B23DDE8692A96A397798AC /* PageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83A0F340AAD37DAE580DAB85 /* PageRenderer.swift */; };
 		284F21631C67B405AABC8902 /* CropEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8C0A31E9D1FC8AD33819DE8 /* CropEditor.swift */; };
 		4B24350886AA882C79C65BF3 /* ScannerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8EE130F78D90EBF9E4DCA9 /* ScannerApp.swift */; };
-		62E6FE2FAB5D269CB833CAF3 /* DocumentCorners.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 03F4F81017D9D45EA9FB3579 /* DocumentCorners.mlpackage */; };
 		71A2D690D8DC50E3DEACEDF1 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EA71A795B6E23A54E52D3D /* ScanView.swift */; };
 		7E84B4ABE35327205F65CAB8 /* ScanEngine in Frameworks */ = {isa = PBXBuildFile; productRef = ABB27989EAA4D5E7670F5B03 /* ScanEngine */; };
 		8D06A15D7110F137576A4541 /* PageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB09FE2A4303EB84FA1741F7 /* PageCard.swift */; };
@@ -25,7 +24,6 @@
 
 /* Begin PBXFileReference section */
 		00C34693B6B36FDE9C99D721 /* Scanner.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Scanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		03F4F81017D9D45EA9FB3579 /* DocumentCorners.mlpackage */ = {isa = PBXFileReference; path = DocumentCorners.mlpackage; sourceTree = "<group>"; };
 		15EA71A795B6E23A54E52D3D /* ScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanView.swift; sourceTree = "<group>"; };
 		2ED2FD44B27D745E83F00120 /* PageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageViewer.swift; sourceTree = "<group>"; };
 		3B03093FC7AAE2EF29C9CDDB /* DocumentCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCamera.swift; sourceTree = "<group>"; };
@@ -61,19 +59,10 @@
 			name = Packages;
 			sourceTree = "<group>";
 		};
-		27CE0DB947DB47C64B301346 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				03F4F81017D9D45EA9FB3579 /* DocumentCorners.mlpackage */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
 		35452BD846620757CE76141D = {
 			isa = PBXGroup;
 			children = (
 				9EC210F5E5167B05912CA602 /* App */,
-				27CE0DB947DB47C64B301346 /* Models */,
 				10AAD62D41BCEA99B48F8A63 /* Packages */,
 				C6FD9F1D3B8881900727BD14 /* Products */,
 			);
@@ -183,7 +172,6 @@
 			files = (
 				284F21631C67B405AABC8902 /* CropEditor.swift in Sources */,
 				F67ED8C50C1AC8A99F45AFF9 /* DocumentCamera.swift in Sources */,
-				62E6FE2FAB5D269CB833CAF3 /* DocumentCorners.mlpackage in Sources */,
 				8D06A15D7110F137576A4541 /* PageCard.swift in Sources */,
 				26B23DDE8692A96A397798AC /* PageRenderer.swift in Sources */,
 				1F6D995BF19104BF67DEA66C /* PageViewer.swift in Sources */,

@@ -9,7 +9,6 @@ A photo of a page usually shows more than the page: a table, a notebook, a keybo
 - Vision's document segmenter, which is fast and finds a page that fills the frame.
 - Rectangles that Vision detects in the photo.
 - Clusters of text, because printed matter carries dense text and a table does not.
-- An optional learned corner model, set with ``DocumentScanner/Options/cornerModel``.
 - The whole photo, when the page fills the frame.
 
 The segmenter alone picks the largest rectangle, so a voucher lying on a notepad comes back as the notepad. Scoring each candidate by how much of the photo's text it holds, and how much it stands out, finds the voucher instead.
