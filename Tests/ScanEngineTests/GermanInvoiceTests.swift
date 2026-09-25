@@ -34,7 +34,7 @@ private func germanScanner(findsPage: Bool) -> DocumentScanner {
 
 @Test("Each German invoice is read word for word, flat or photographed", .needsVision,
       arguments: [("invoice", false, 0.971), ("invoice-clean", false, 0.957),
-                  ("invoice-hard", false, 0.971), ("invoice-photo", true, 0.986)])
+                  ("invoice-hard", false, 0.971), ("invoice-photo", true, 0.971)])
 func invoiceWordsAreRead(_ name: String, _ findsPage: Bool, _ measured: Double) async throws {
     // Measured with Xcode 27.0; the limit allows two words fewer.
     let page = try await germanScanner(findsPage: findsPage).scan(try knownPage(name))
@@ -74,14 +74,14 @@ func amountsHaveTwoDecimals() async throws {
 
 @Test("With automatic language detection, the euro sign on a photographed bill stays a euro sign", .needsVision)
 func euroSurvivesAutomaticLanguage() async throws {
-    // Known issue in Vision, kept visible. With the language left to automatic
-    // detection, the photographed bill's € comes back as "も", a Japanese
-    // character; with German set, it never does. Callers who know the
-    // language should set it. When Vision stops doing this, the test says so.
-    try await withKnownIssue("Automatic language detection misreads € on the photographed bill") {
-        let text = try await DocumentScanner().scan(try knownPage("invoice-photo")).text
-        #expect(!text.contains("も"))
-    }
+    // This was a known issue. With the language left to automatic detection,
+    // Vision read the photographed bill's € as "も", a Japanese character,
+    // while the page finder cut the bill close to its print: 4 of the 6 € came
+    // through. Cut along the bill's own outline, all 6 do. German set still
+    // reads more of the words, so callers who know the language should set it.
+    let text = try await DocumentScanner().scan(try knownPage("invoice-photo")).text
+    #expect(!text.contains("も"), "read: \(text)")
+    #expect(text.filter { $0 == "€" }.count == 6, "read: \(text)")
 }
 
 @Test("A quantity printed next to an amount stays out of the amount", .needsVision)

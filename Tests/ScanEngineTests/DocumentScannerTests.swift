@@ -56,6 +56,54 @@ private func emptySurface() throws -> CGImage {
     return try #require(context.makeImage())
 }
 
+/// A card the colour of the ruled sheet it lies on, so its border cannot be
+/// seen. It carries the receipt's header at the top and its footer at the
+/// bottom, far apart, as the voucher carries a headline and a serial number.
+private func unseenCardOnRuledSheet() throws -> CGImage {
+    let context = try #require(CGContext(
+        data: nil, width: 1200, height: 1600,
+        bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ))
+    context.setFillColor(CGColor(red: 0.18, green: 0.15, blue: 0.13, alpha: 1))
+    context.fill(CGRect(x: 0, y: 0, width: 1200, height: 1600))
+    let paper = CGColor(red: 0.95, green: 0.95, blue: 0.94, alpha: 1)
+    let sheet = CGRect(x: 80, y: 60, width: 1040, height: 1480)
+    context.setFillColor(paper)
+    context.fill(sheet)
+    context.setStrokeColor(CGColor(red: 0.70, green: 0.80, blue: 0.92, alpha: 1))
+    context.setLineWidth(2)
+    for y in stride(from: sheet.minY + 30, to: sheet.maxY - 10, by: 34) {
+        context.move(to: CGPoint(x: sheet.minX + 10, y: y))
+        context.addLine(to: CGPoint(x: sheet.maxX - 10, y: y))
+    }
+    context.strokePath()
+    let card = CGRect(x: 380, y: 480, width: 480, height: 640)
+    context.setFillColor(paper)
+    context.fill(card)
+
+    // The print alone: the receipt's paper is lifted to white, so drawing it
+    // with multiply leaves no edge around it.
+    let receipt = try knownPage("receipt-clean")
+    func printed(_ region: CGRect) throws -> CGImage {
+        let lift = CIFilter.colorControls()
+        lift.inputImage = CIImage(cgImage: try #require(receipt.cropping(to: region)))
+        lift.brightness = 0.15
+        let lifted = try #require(lift.outputImage)
+        return try #require(CIContext().createCGImage(lifted, from: lifted.extent))
+    }
+    let scale = 0.44
+    context.setBlendMode(.multiply)
+    context.draw(try printed(CGRect(x: 150, y: 150, width: 560, height: 290)), in: CGRect(
+        x: card.minX + 20, y: card.maxY - 20 - 290 * scale, width: 560 * scale, height: 290 * scale
+    ))
+    context.draw(try printed(CGRect(x: 150, y: 1330, width: 870, height: 160)), in: CGRect(
+        x: card.minX + 20, y: card.minY + 20, width: 870 * scale, height: 160 * scale
+    ))
+    return try #require(context.makeImage())
+}
+
 private func errorRate(of page: ScannedPage) throws -> Double {
     TextAccuracy.characterErrorRate(recognized: page.text, truth: try knownTranscript("receipt"))
 }
@@ -66,7 +114,7 @@ func photographedPageIsScanned() async throws {
 
     #expect(page.wasPageFound)
     #expect(page.image.height > page.image.width, "came out \(page.image.width)x\(page.image.height), not upright")
-    // Measured 0.0115 with the style Auto chose (Enhance).
+    // Measured 0.0115 with the style Auto chose (Colour).
     let rate = try errorRate(of: page)
     #expect(rate <= 0.0115 + AccuracyCase.margin, "error rate \(rate)")
 }
@@ -135,6 +183,46 @@ func cardOnANotepadIsNotTakenWhole(_ name: String) async throws {
     let best = try #require(try await DocumentCandidateSelector().best(in: try knownPage(name)))
     #expect(best.source != .frame)
     #expect(best.quad.area < 0.2, "\(name): took \(best.quad.area) of the photo")
+}
+
+@Test("A page lying on a table keeps its own outline, not a box around its print", .needsVision)
+func pageOnATableKeepsItsOutline() async throws {
+    // The print's own estimate of the page used to win here. On the angle
+    // photo it took 0.233 of the photo: it ran onto the table at the top and
+    // left and cut blank paper at the right and bottom. The segmenter sees the
+    // page at 0.99, and its outline holds every line. Measured: every corner
+    // within 0.007 of the page's own.
+    let pages: [(String, CGImage, [CGPoint])] = [
+        // As photographedReceipt() draws it.
+        ("angle photo", try photographedReceipt(), [
+            CGPoint(x: 0.22, y: 0.84), CGPoint(x: 0.74, y: 0.80),
+            CGPoint(x: 0.80, y: 0.16), CGPoint(x: 0.16, y: 0.20),
+        ]),
+        // The page in normal-scene.png covers pixels 70 to 1129 across and 90
+        // to 1509 down, of 1200 by 1600.
+        ("normal-scene", try knownPage("normal-scene"), [
+            CGPoint(x: 0.058, y: 0.944), CGPoint(x: 0.942, y: 0.944),
+            CGPoint(x: 0.942, y: 0.056), CGPoint(x: 0.058, y: 0.056),
+        ]),
+    ]
+    for (name, photo, corners) in pages {
+        let best = try #require(try await DocumentCandidateSelector().best(in: photo))
+        for (found, page) in zip(best.quad.corners, corners) {
+            #expect(hypot(found.x - page.x, found.y - page.y) < 0.02,
+                    "\(name): corner at \(found), page corner at \(page)")
+        }
+    }
+}
+
+@Test("A card whose border cannot be seen is not taken for the sheet under it", .needsVision)
+func unseenCardIsNotTakenForTheSheet() async throws {
+    // The segmenter sees the sheet at 0.99, and its outline holds all the
+    // card's print, as a page's outline holds its own. What tells them apart
+    // is how much of the outline the print's estimate covers: here 0.29, on a
+    // page lying on a table 0.62 to 0.66. Measured: the card's print keeps
+    // 0.230 of the photo; the sheet would be 0.799.
+    let best = try #require(try await DocumentCandidateSelector().best(in: try unseenCardOnRuledSheet()))
+    #expect(best.quad.area < 0.4, "took \(best.quad.area) of the photo")
 }
 
 @Test("When no page is found, the whole photo is used and the result says so", .needsVision)

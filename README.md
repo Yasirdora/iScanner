@@ -80,7 +80,7 @@ direction fails the build.
 
 ## Tests
 
-88 tests (Swift Testing) cover the engine. One of them runs only on machines
+97 tests (Swift Testing) cover the engine. One of them runs only on machines
 without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
@@ -161,6 +161,15 @@ Fixtures/         test pages, ground-truth transcripts, sample outputs
   it trusts the precise one only while it is fresh and the scene still
   matches, and the fast one otherwise. It is pure and synchronous, so every
   rule has a test.
+- **A seen outline beats a guess from the print.** The page finder also
+  guesses the page from its print: the block of text plus a margin. That is
+  how it finds a white card on white paper. On a page photographed on a
+  table, the guess ran onto the table on one side and cut blank paper on the
+  other. Now an outline seen in the photo wins when it holds all the print
+  and the guess covers at least half of it. The angle photo keeps 0.367 of
+  the photo instead of 0.233, at the same error rate (0.0115). The sheet
+  under a card holds the card's print too, but the guess covers less than a
+  third of it, so the card still wins.
 - **White point from the paper, not from a percentile.** A percentile moves
   with how much ink is on the page, so the same paper came out a different
   grey on every page. Taking the most common paper value fixed that. It also
@@ -180,6 +189,10 @@ Fixtures/         test pages, ground-truth transcripts, sample outputs
   can still keep only part of the page. With a logo in a corner of the
   ordinary receipt, it kept the text and lost the logo. Turn page finding off
   for such images.
+- On a page lying on a table with little print, where the print and its
+  margin cover less than half the page, the page finder keeps only the part
+  around the print. A card whose border cannot be seen looks the same in a
+  photo, and there the card is the right answer.
 - The app does not use the live tracker and auto-capture rules yet; they are
   tested engine features.
 - Curved pages, such as an open book, are not flattened. Only perspective is

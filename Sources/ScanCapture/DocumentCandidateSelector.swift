@@ -83,6 +83,11 @@ public struct DocumentCandidateSelector: Sendable {
     /// every flat test page, 1.1% and more on every page photographed lying on
     /// something.
     private static let maximumSurfaceEdges = 0.0025
+    /// The least share of a seen outline that the print's own estimate of
+    /// its page must cover for the outline to be that page. Measured: 0.62
+    /// to 0.66 on pages photographed on a table, 0.27 to 0.31 for a card
+    /// lying on a larger sheet.
+    private static let minimumPrintCover = 0.5
 
     public var weights: Weights
 
@@ -118,6 +123,16 @@ public struct DocumentCandidateSelector: Sendable {
         var rectangles: [DocumentQuad]
         var lines: [TextLine]
         var salient: [CGRect]
+
+        /// Whether a candidate from `source` is an outline seen in the photo
+        /// with confidence: a rectangle, or the segmenter's when it is sure.
+        func isSeenOutline(_ source: DocumentCandidate.Source, minimumSegmentation: Float) -> Bool {
+            switch source {
+            case .rectangle: true
+            case .segmentation: (segmented?.confidence ?? 0) >= minimumSegmentation
+            case .textCluster, .frame: false
+            }
+        }
 
         /// Whether an outline seen in the photo holds every line of print: a
         /// rectangle, or the segmenter's when it is sure of it.
@@ -173,6 +188,30 @@ public struct DocumentCandidateSelector: Sendable {
             .map { score($0.0, source: $0.1, text: textBoxes, salient: signals.salient) }
             .filter { $0.quad.area >= Self.minimumArea }
             .sorted { $0.score > $1.score }
+
+        // The page seen around its print.
+        //
+        // The print's own estimate of its page reaches a fixed margin past the
+        // print, and wins on area whenever the real page reaches further. On a
+        // page photographed on a table the segmenter saw the page at 0.99 and
+        // its outline held every line, yet the estimate won: it ran onto the
+        // table on one side and cut blank paper on the other.
+        //
+        // So a seen outline — a rectangle, or the segmenter when it is sure —
+        // comes first when it holds all the print and the estimate covers at
+        // least half of it. The sheet under a card holds the card's print too,
+        // but the estimate covers only a small part of it. Where the card's own
+        // border cannot be seen, that is the only difference between the two.
+        if let clustered, ranked.first?.source == .textCluster,
+           let index = ranked.firstIndex(where: { candidate in
+               signals.isSeenOutline(candidate.source, minimumSegmentation: Self.confidentSegmentation)
+                   && candidate.textContainment == 1
+                   && clustered.0.area >= Self.minimumPrintCover * candidate.quad.area
+           }) {
+            var reordered = ranked
+            let page = reordered.remove(at: index)
+            return [page] + reordered
+        }
 
         // The page that fills the frame.
         //
