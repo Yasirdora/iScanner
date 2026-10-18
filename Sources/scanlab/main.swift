@@ -86,7 +86,7 @@ USAGE
       Enhance, recognise, then pull typed fields with the on-device model.
 
   scanlab synth <output.png> [--difficulty clean|normal|hard|colour|notes]
-                             [--document receipt|invoice] [--on-table]
+                             [--document receipt|invoice|screenplay] [--on-table]
       Write a synthetic shadowed page plus its exact ground-truth transcript,
       for regressing the pipeline before a real corpus exists. `invoice` is a
       German bill; `--on-table` photographs the page at an angle on a table.
@@ -331,8 +331,8 @@ func extract(_ args: Arguments) async throws {
 func synth(_ args: Arguments) throws {
     let difficulty = Synthesizer.Difficulty(rawValue: args.difficulty) ?? .normal
     guard let document = Synthesizer.Document(rawValue: args.document) else { throw CLIError.usage }
-    // The invoice has its own layout; the colour marks and the ruled notes page
-    // are drawn for the receipt only.
+    // The invoice and the screenplay have their own layout; the colour marks
+    // and the ruled notes page are drawn for the receipt only.
     if document != .receipt && difficulty.hasColour { throw CLIError.usage }
     let page = try Synthesizer.makePage(difficulty: difficulty, document: document, onTable: args.onTable)
     let output = args.input

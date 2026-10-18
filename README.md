@@ -9,6 +9,21 @@ Everything runs on the device. The engine has no network code and no
 third-party code dependencies. It also builds for macOS, so the whole pipeline
 can be run, measured and tested from the command line, without a simulator.
 
+<table>
+<tr>
+<td><img src="Docs/images/screenplay-photo.jpg" height="480" alt="A screenplay page rendered lying at an angle on a table"></td>
+<td><img src="Docs/images/screenplay-scan.jpg" height="480" alt="The same page found, straightened and cleaned up"></td>
+</tr>
+<tr>
+<td align="center"><em>Rendered on a table</em></td>
+<td align="center"><em>Found, straightened, cleaned up</em></td>
+</tr>
+</table>
+
+*The first page of an invented screenplay, rendered lying on a table, and
+what the scanner made of it. Generated with
+`scanlab synth --document screenplay --on-table`, so every word on it is known.*
+
 ## What it does
 
 | Step | Module | How |
@@ -47,6 +62,18 @@ whole. To skip page finding for such images, use
 
 A fictional invoice from "Musterfirma GmbH", made with
 `scanlab synth --document invoice --on-table`, so every word on it is known.
+
+<table>
+<tr>
+<td><img src="Docs/images/invoice-photo.jpg" height="480" alt="A German invoice rendered lying at an angle on a table"></td>
+<td><img src="Docs/images/invoice-scan.jpg" height="480" alt="The same invoice found, straightened and cleaned up"></td>
+</tr>
+<tr>
+<td align="center"><em>Rendered on a table</em></td>
+<td align="center"><em>Found, straightened, cleaned up</em></td>
+</tr>
+</table>
+
 With German set as the language, the scanner reads 97.1% of its words and
 finds these as data:
 
@@ -176,6 +203,7 @@ App/              SwiftUI iPhone app: camera, corner editor, page viewer
 Examples/         QuickStart: the smallest app that uses ScanEngine
 Tests/            Swift Testing suites
 Fixtures/         test pages, ground-truth transcripts, sample outputs
+Docs/images/      README images, made with scanlab synth and scanlab auto
 ```
 
 ## Design notes

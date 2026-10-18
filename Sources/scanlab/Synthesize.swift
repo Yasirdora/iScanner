@@ -58,11 +58,28 @@ enum Synthesizer {
         /// ß, the euro sign, decimal commas, a VAT line, an IBAN and a payment
         /// reference — the fields a German bill is scanned for.
         case invoice
+        /// The first page of an invented screenplay, "Line Three", in the
+        /// standard layout: Courier 12 at ten characters and six lines to the
+        /// inch, with action, character names, parentheticals, dialogue and a
+        /// transition at their usual indents.
+        case screenplay
 
         var text: String {
             switch self {
             case .receipt: baseGroundTruth
             case .invoice: invoiceGroundTruth
+            case .screenplay: screenplayGroundTruth
+            }
+        }
+
+        /// How the page is set, in pixels of the 200-dpi page: the face and
+        /// its size, the line pitch, and where the first line starts.
+        var layout: (font: String, size: CGFloat, pitch: CGFloat, left: CGFloat, top: CGFloat) {
+            switch self {
+            case .receipt, .invoice: ("Menlo", 44, 62, 180, 220)
+            // Courier 12 pt is 33⅓ px at 200 dpi: ten characters and six lines
+            // to the inch, a 1.5-inch left margin and a 1-inch top margin.
+            case .screenplay: ("Courier", 200.0 / 6, 200.0 / 6, 300, 200 + 200.0 / 6)
             }
         }
     }
@@ -136,6 +153,56 @@ enum Synthesizer {
     Verwendungszweck: RE-2026-0815
     """
 
+    /// Indents are spaces, as in a typed script: the face is monospaced, so
+    /// ten spaces are one inch.
+    static let screenplayGroundTruth = """
+    FADE IN:
+
+    EXT. HARBOR BRIDGE - NIGHT
+
+    Fog swallows the far end of the bridge.
+
+    A car sits dead in the middle lane. Driver's door open.
+    Hazard lights ticking.
+
+    On the asphalt beside it: one red high heel, upright, as if
+    someone stepped out of it on purpose.
+
+    The car radio is still playing.
+
+                          DELL (V.O.)
+                    (on the radio)
+              It's three-twelve in the morning.
+              If you're still awake, you're one
+              of us.
+
+    A gloved hand reaches in and switches it off.
+
+    SUPER: "SIX HOURS EARLIER"
+
+                                                  SMASH CUT TO:
+
+    INT. HARBOR LIGHT RADIO - STUDIO B - NIGHT
+
+    A cramped booth bathed in red light. A sign glows above the
+    door: ON AIR.
+
+    DELL ACKERMAN (50s), a voice like warm gravel and a face
+    that hasn't slept since spring, leans into the microphone.
+
+                          DELL
+                    (into mic)
+              Lines are open. Tell me what keeps
+              you up.
+
+    On the console, a single light starts to blink. LINE THREE.
+
+    He presses it.
+
+                          DELL (CONT'D)
+              You're on The Quiet Hour.
+    """
+
     static func makePage(
         difficulty: Difficulty = .normal,
         document: Document = .receipt,
@@ -164,7 +231,8 @@ enum Synthesizer {
 
         // A monospaced face keeps the columns aligned, which also gives the
         // recogniser a real table to find rather than ragged text.
-        let font = CTFontCreateWithName("Menlo" as CFString, 44, nil)
+        let layout = document.layout
+        let font = CTFontCreateWithName(layout.font as CFString, layout.size, nil)
         // Faded toner on the hard variant: less ink-to-paper separation for the
         // lighting defect to eat into.
         let inkLevel: CGFloat = switch difficulty {
@@ -187,9 +255,9 @@ enum Synthesizer {
         }
         if difficulty.hasColour { drawColourElements(in: context) }
 
-        var y = pageSize.height - 220
+        var y = pageSize.height - layout.top
         for rawLine in document.text.components(separatedBy: "\n") {
-            defer { y -= 62 }
+            defer { y -= layout.pitch }
             guard !rawLine.trimmingCharacters(in: .whitespaces).isEmpty else { continue }
 
             let attributed = NSAttributedString(string: rawLine, attributes: [
@@ -198,7 +266,7 @@ enum Synthesizer {
             ])
             let line = CTLineCreateWithAttributedString(attributed)
             context.textMatrix = .identity
-            context.textPosition = CGPoint(x: 180, y: y)
+            context.textPosition = CGPoint(x: layout.left, y: y)
             CTLineDraw(line, context)
         }
 
