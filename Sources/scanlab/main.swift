@@ -299,7 +299,7 @@ func compare(_ args: Arguments) async throws {
             "\(recognition.transcript.count)",
             String(format: "%.3f", confidence),
             cer.map { String(format: "%.3f", $0) } ?? "—",
-            "\((bytes ?? 0) / 1024)KB"
+            "\(bytes / 1024)KB"
         ))
     }
 }
@@ -519,10 +519,10 @@ func bench(_ args: Arguments) async throws {
         var segmentation: [Double] = []
         var candidates: [Double] = []
         for _ in 0..<5 {
-            segmentation.append(try await elapsedMs {
+            segmentation.append(await elapsedMs {
                 _ = try? await detector.detect(in: scaled, regionOfInterest: nil)
             })
-            candidates.append(try await elapsedMs {
+            candidates.append(await elapsedMs {
                 _ = try? await selector.best(in: scaled)
             })
         }

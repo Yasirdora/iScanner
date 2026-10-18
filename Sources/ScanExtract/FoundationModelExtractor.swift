@@ -37,7 +37,7 @@ public struct FoundationModelExtractor: DocumentExtracting {
     /// Extraction is a parsing task, not a creative one: the same page must
     /// always yield the same fields, so sampling is disabled.
     private var deterministic: GenerationOptions {
-        GenerationOptions(sampling: .greedy)
+        GenerationOptions(samplingMode: .greedy)
     }
 
     private func clipped(_ recognition: PageRecognition) throws -> String {

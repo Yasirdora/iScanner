@@ -90,7 +90,7 @@ func quantityStaysOutOfTheAmount() async throws {
     // "4  340,00 €" is grouped as one line and detected as 4340 €, as if the
     // space were a thousands separator. The transcript itself is right; it is
     // the detected amount that is wrong.
-    try await withKnownIssue("Data detection reads a quantity and an amount as one number") {
+    await withKnownIssue("Data detection reads a quantity and an amount as one number") {
         let detected = try await germanScanner(findsPage: false).scan(try knownPage("invoice")).recognition.detected
         #expect(!detected.contains(DetectedValue(kind: .money, value: "EUR 4340.00")), "found: \(detected)")
     }
