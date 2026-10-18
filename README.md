@@ -99,9 +99,11 @@ let page = try await DocumentScanner(options: options).scan(photo)
 page.recognition.detected   // amounts, dates, addresses, IBANs
 ```
 
-Vision does not report IBANs, so the engine finds them itself and keeps only
-those whose ISO 13616 check digits hold. That catches every digit misread as
-another digit, but not every mistake (see Known limits). [eDraft](https://apps.apple.com/app/edraft/id6816992261), my
+Vision does not report IBANs, so the engine finds them itself. It keeps only
+those that fit their country's format in the IBAN registry (a German IBAN is
+"DE", two check digits and 18 digits) and whose ISO 13616 check digits hold.
+Together, the two catch every single misread character in a German IBAN, and
+every character lost or doubled, but not every mistake (see Known limits). [eDraft](https://apps.apple.com/app/edraft/id6816992261), my
 screenwriting app on the App Store, scans paper scripts with the same Vision
 document recognition and the same invisible PDF text layer.
 
@@ -140,7 +142,7 @@ direction fails the build.
 
 ## Tests
 
-111 tests (Swift Testing) cover the engine. One of them runs only on machines
+114 tests (Swift Testing) cover the engine. One of them runs only on machines
 without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
@@ -252,9 +254,13 @@ Docs/images/      README images, made with scanlab synth, auto and process
   region, not from the page. With the region set to the United States, a
   German "01.10.2026" comes back as 10 January. Dates whose day is 13 or more
   come back right.
-- The IBAN check digits do not catch every misread: about 1 in 110 digits read
-  as a letter ("5" as "S") still pass, and so do about 1 in 110 pairs of
-  misread digits. Show a found IBAN to the user before paying.
+- The IBAN check does not catch every misread. About 1 in 105 IBANs with two
+  misread digits still pass. In 38 of the registry's 89 countries, France,
+  Italy and Switzerland among them, part of the account number may hold
+  letters as well as digits; there, about 1 in 100 digits read as a letter
+  ("5" as "S") still pass. Show a found IBAN to the user before paying.
+- IBANs are checked against SWIFT's IBAN registry of 17 September 2026. An
+  IBAN from a country added to the registry later is not found.
 - On a flat page with a picture or a logo away from its text, the page finder
   can still keep only part of the page. With a logo in a corner of the
   ordinary receipt, it kept the text and lost the logo. Turn page finding off

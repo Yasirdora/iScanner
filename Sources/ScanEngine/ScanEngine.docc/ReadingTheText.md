@@ -38,7 +38,13 @@ options.recognition.languages = [Locale.Language(identifier: "de-DE")]
 
 ## IBANs
 
-Vision's data detection reports amounts, dates and addresses, but not IBANs. The recogniser finds them itself and adds each one whose ISO 13616 check digits hold to `detected`, as a `paymentIdentifier` grouped in fours: `DE89 3704 0044 0532 0130 00`. The check catches every digit misread as another digit and every swap of two neighbouring digits. It does not catch every mistake: about 1 in 110 digits misread as a letter ("5" as "S") still pass, and so do about 1 in 110 pairs of misread digits. So show a found IBAN to the user before money is sent. `IBAN.isValid(_:)` checks one on its own.
+Vision's data detection reports amounts, dates and addresses, but not IBANs. The recogniser finds them itself. It adds each one to `detected` that fits its country's format in SWIFT's IBAN registry and whose ISO 13616 check digits hold, as a `paymentIdentifier` grouped in fours: `DE89 3704 0044 0532 0130 00`.
+
+The format catches what the check digits miss. A letter counts as two digits in the check (S is 28), so on their own the check digits let about 1 in 110 digits misread as a letter through. A German IBAN is "DE", two check digits and 18 digits, so a letter after "DE", or a lost or doubled character, fails. In a German IBAN, every single misread character fails the check.
+
+Not every mistake does. About 1 in 105 IBANs with two misread digits still pass. In 38 of the registry's 89 countries, France and Italy among them, part of the account number may hold letters as well as digits; there, about 1 in 100 digits misread as a letter still pass. So show a found IBAN to the user before money is sent.
+
+A country code the registry does not list is never reported. "RF" starts a creditor reference, which bills print for the payer to quote; its check digits hold, but it is not an account. A country added to the registry after 17 September 2026 is not found until the list in `IBAN` is updated. `IBAN.isValid(_:)` checks one IBAN on its own.
 
 ## Dates
 
