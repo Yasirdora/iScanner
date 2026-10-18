@@ -58,11 +58,12 @@ public struct DocumentRecognizer: Sendable {
         }
 
         let transcript = document.text.transcript
+        let dates = await PrintedDates.find(in: transcript).map { DetectedValue(kind: .calendarEvent, value: $0) }
         return PageRecognition(
             transcript: transcript,
             runs: textRuns(in: document),
             tables: document.tables.map(convert),
-            detected: document.text.detectedData.compactMap(convert) + payments(in: transcript),
+            detected: document.text.detectedData.compactMap(convert) + dates + payments(in: transcript),
             barcodes: document.barcodes.compactMap(\.payloadString)
         )
     }
@@ -104,10 +105,10 @@ public struct DocumentRecognizer: Sendable {
             .init(kind: .url, value: link.url.absoluteString)
         case .postalAddress(let address):
             .init(kind: .postalAddress, value: address.fullAddress)
-        case .calendarEvent(let event):
-            event.startDate.map {
-                .init(kind: .calendarEvent, value: ISO8601DateFormatter().string(from: $0))
-            }
+        case .calendarEvent:
+            // Read from the transcript instead, keeping only the dates printed
+            // on the page. See `PrintedDates`.
+            nil
         case .moneyAmount(let money):
             // Two decimals, always: the detector's amount is a Decimal made
             // from a binary floating-point value, and printed as it is,

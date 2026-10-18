@@ -55,6 +55,7 @@ finds these as data:
 | Total (Gesamtbetrag) | `EUR 563.94` |
 | IBAN, check digits verified | `DE89 3704 0044 0532 0130 00` |
 | Invoice date | 14.10.2026 |
+| Due date ("Zahlbar bis") | 28.10.2026 |
 | Addresses | sender and recipient |
 
 ```swift
@@ -65,8 +66,8 @@ page.recognition.detected   // amounts, dates, addresses, IBANs
 ```
 
 Vision does not report IBANs, so the engine finds them itself and keeps only
-those whose ISO 13616 check digits hold: a single misread character means no
-IBAN, not a wrong one. [eDraft](https://apps.apple.com/app/edraft/id6816992261), my
+those whose ISO 13616 check digits hold. That catches every digit misread as
+another digit, but not every mistake (see Known limits). [eDraft](https://apps.apple.com/app/edraft/id6816992261), my
 screenwriting app on the App Store, scans paper scripts with the same Vision
 document recognition and the same invisible PDF text layer.
 
@@ -105,7 +106,7 @@ direction fails the build.
 
 ## Tests
 
-104 tests (Swift Testing) cover the engine. One of them runs only on machines
+111 tests (Swift Testing) cover the engine. One of them runs only on machines
 without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
@@ -212,6 +213,13 @@ Fixtures/         test pages, ground-truth transcripts, sample outputs
 
 - Vision's data detection can read a quantity printed next to an amount as part
   of the amount ("4  340,00 €" as 4340 €).
+- Vision's data detection takes the order of day and month from the device's
+  region, not from the page. With the region set to the United States, a
+  German "01.10.2026" comes back as 10 January. Dates whose day is 13 or more
+  come back right.
+- The IBAN check digits do not catch every misread: about 1 in 110 digits read
+  as a letter ("5" as "S") still pass, and so do about 1 in 110 pairs of
+  misread digits. Show a found IBAN to the user before paying.
 - On a flat page with a picture or a logo away from its text, the page finder
   can still keep only part of the page. With a logo in a corner of the
   ordinary receipt, it kept the text and lost the logo. Turn page finding off

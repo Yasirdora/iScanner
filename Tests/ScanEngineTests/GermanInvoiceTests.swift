@@ -59,6 +59,15 @@ func billFieldsAreDetected() async throws {
     #expect(detected.contains { $0.kind == .calendarEvent && $0.value.hasPrefix("2026-10-14") }, "found: \(detected)")
 }
 
+@Test("The bill's dates are the three printed on it, not the day of the scan", .needsVision)
+func billDatesAreThePrintedOnes() async throws {
+    // Regression: "Zahlbar bis 28.10.2026" ("payable until") was reported as
+    // the day of the scan, and the due date was lost. See `PrintedDates`.
+    let detected = try await germanScanner(findsPage: true).scan(try knownPage("invoice-photo")).recognition.detected
+    let days = detected.filter { $0.kind == .calendarEvent }.map { String($0.value.prefix(10)) }
+    #expect(days.sorted() == ["2026-10-10", "2026-10-14", "2026-10-28"], "found: \(detected)")
+}
+
 @Test("Every amount is reported with two decimals", .needsVision)
 func amountsHaveTwoDecimals() async throws {
     // Regression: the detector's amount is a Decimal made from a binary

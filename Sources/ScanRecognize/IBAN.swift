@@ -3,11 +3,16 @@ import Foundation
 /// Finds IBANs in recognised text, keeping only those whose check digits hold.
 ///
 /// Vision's data detection does not report IBANs, so the recogniser looks for
-/// them itself. The check digits do the real work: under the ISO 13616 mod-97
-/// test, one misread character makes an IBAN invalid, so a reported IBAN was
-/// either read correctly or is not reported at all. For paying a bill from a
-/// photo, a missing IBAN is an inconvenience; a wrong one is money sent to a
-/// stranger.
+/// them itself. The check digits do most of the work: under the ISO 13616
+/// mod-97 test, every digit misread as another digit, every letter misread as
+/// another letter, and every swap of two neighbouring digits or two
+/// neighbouring letters makes an IBAN invalid. Not every mistake does. A
+/// letter counts as two digits (S is 28), so a digit misread as a letter
+/// changes the number's length: measured on 2,000 IBANs, about 1 in 110 such
+/// misreads still pass, and so do about 1 in 110 pairs of misread digits. A
+/// reported IBAN is very likely the printed one, not certainly. For paying a
+/// bill from a photo, a missing IBAN is an inconvenience; a wrong one is money
+/// sent to a stranger, so show the IBAN to the user before paying.
 public enum IBAN {
 
     /// IBANs in `text`, in reading order, grouped in fours as printed on a
