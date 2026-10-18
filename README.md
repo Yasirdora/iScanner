@@ -9,12 +9,20 @@ Everything runs on the device. The engine has no network code and no
 third-party code dependencies. It also builds for macOS, so the whole pipeline
 can be run, measured and tested from the command line, without a simulator.
 
-![A synthetic page with a heavy shadow: as shot, enhanced, and bitonal](Fixtures/out/comparison.png)
+<table>
+<tr>
+<td><img src="Docs/images/invoice-photo.jpg" height="480" alt="A German invoice photographed at an angle on a table"></td>
+<td><img src="Docs/images/invoice-scan.jpg" height="480" alt="The same invoice found, straightened and cleaned up"></td>
+</tr>
+<tr>
+<td align="center"><em>As photographed</em></td>
+<td align="center"><em>Found, straightened, cleaned up</em></td>
+</tr>
+</table>
 
-*A synthetic test page with a heavy shadow: as shot, cleaned up, and Ink.
-`scanlab synth` writes the page together with its exact transcript, so every
-result can be scored. The labels inside the image come from an earlier
-measurement; the current numbers are in the table below.*
+*A fictional German bill photographed at an angle on a table, and what the
+scanner made of it. Generated with `scanlab synth --document invoice --on-table`,
+so every word on it is known.*
 
 ## What it does
 
@@ -45,9 +53,41 @@ whole. To skip page finding for such images, use
 `DocumentScanner(options: .init(findsPage: false))`.
 
 - [`Examples/QuickStart`](Examples/QuickStart) — a small SwiftUI app: pick a
-  photo, scan it, share the PDF.
+  photo or try the bundled German sample bill, see the text and the data found
+  in it, share the PDF.
 - [Documentation](Sources/ScanEngine/ScanEngine.docc) — Getting Started and
   one article per step, built with DocC.
+
+## Reading a German bill
+
+A fictional invoice from "Musterfirma GmbH", made with
+`scanlab synth --document invoice --on-table`, so every word on it is known.
+With German set as the language, the scanner reads 97.1% of its words and
+finds these as data:
+
+| Field | Found |
+|---|---|
+| Total (Gesamtbetrag) | `EUR 563.94` |
+| IBAN, check digits verified | `DE89 3704 0044 0532 0130 00` |
+| Invoice date | 14.10.2026 |
+| Addresses | sender and recipient |
+
+```swift
+var options = DocumentScanner.Options()
+options.recognition.languages = [Locale.Language(identifier: "de-DE")]
+let page = try await DocumentScanner(options: options).scan(photo)
+page.recognition.detected   // amounts, dates, addresses, IBANs
+```
+
+Vision does not report IBANs, so the engine finds them itself and keeps only
+those whose ISO 13616 check digits hold: a single misread character means no
+IBAN, not a wrong one. [eDraft](https://apps.apple.com/app/edraft/id6816992261), my
+screenwriting app on the App Store, scans paper scripts with the same Vision
+document recognition and the same invisible PDF text layer.
+
+One thing Vision gets wrong here is kept visible as a known-issue test: on
+the flat bill, data detection reads the quantity and the amount "4  340,00 €"
+as one number, 4340 €. The text itself is right.
 
 ## Measured, not guessed
 
@@ -150,6 +190,7 @@ App/              SwiftUI iPhone app: camera, corner editor, page viewer
 Examples/         QuickStart: the smallest app that uses ScanEngine
 Tests/            Swift Testing suites
 Fixtures/         test pages, ground-truth transcripts, sample outputs
+Docs/images/      README images, made from the fixtures
 ```
 
 ## Design notes
@@ -185,6 +226,8 @@ Fixtures/         test pages, ground-truth transcripts, sample outputs
 
 ## Known limits
 
+- Vision's data detection can read a quantity printed next to an amount as part
+  of the amount ("4  340,00 €" as 4340 €).
 - On a flat page with a picture or a logo away from its text, the page finder
   can still keep only part of the page. With a logo in a corner of the
   ordinary receipt, it kept the text and lost the logo. Turn page finding off

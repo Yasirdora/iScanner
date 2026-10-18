@@ -9,12 +9,14 @@
 /* Begin PBXBuildFile section */
 		05EF3B883F179441278AD591 /* ScanEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 97B200CA75D308E4133DB9AF /* ScanEngine */; };
 		4A198F760C008CF21D2D81DC /* QuickStartApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C626AC63359637515520BDF5 /* QuickStartApp.swift */; };
+		A35A3B09B2C9E97FC9FA216F /* SampleBill.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 824BAD6ED078484328FD1F62 /* SampleBill.jpg */; };
 		D0F3669259F0DEEE48054258 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C221EEBECF8E3F0562769489 /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		253CE2A907E6229C3AD135EF /* rehearse-c */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "rehearse-c"; path = ../..; sourceTree = SOURCE_ROOT; };
 		47D94B4A0B6065B7390DCC40 /* QuickStart.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = QuickStart.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		824BAD6ED078484328FD1F62 /* SampleBill.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = SampleBill.jpg; sourceTree = "<group>"; };
+		8601DF6F28D9D3C0C99B3395 /* scan */ = {isa = PBXFileReference; lastKnownFileType = folder; name = scan; path = ../..; sourceTree = SOURCE_ROOT; };
 		C221EEBECF8E3F0562769489 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		C626AC63359637515520BDF5 /* QuickStartApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStartApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -42,9 +44,17 @@
 		4369C1BA5E6371CBB83CF5DD /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				253CE2A907E6229C3AD135EF /* rehearse-c */,
+				8601DF6F28D9D3C0C99B3395 /* scan */,
 			);
 			name = Packages;
+			sourceTree = "<group>";
+		};
+		51B4FC709620956340566F2E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				824BAD6ED078484328FD1F62 /* SampleBill.jpg */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		7784B2F722EB410C58BFEF64 /* Sources */ = {
@@ -60,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				4369C1BA5E6371CBB83CF5DD /* Packages */,
+				51B4FC709620956340566F2E /* Resources */,
 				7784B2F722EB410C58BFEF64 /* Sources */,
 				1B0653278AD1D8CFF0B5B8F6 /* Products */,
 			);
@@ -73,6 +84,7 @@
 			buildConfigurationList = E56547A5474ED0995ADC96A0 /* Build configuration list for PBXNativeTarget "QuickStart" */;
 			buildPhases = (
 				B45BF28486364B0447788092 /* Sources */,
+				92A4DB74BDD0F6F5EA6F5B38 /* Resources */,
 				C3FCACD28911CB9FA630BDE1 /* Frameworks */,
 			);
 			buildRules = (
@@ -122,6 +134,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		92A4DB74BDD0F6F5EA6F5B38 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A35A3B09B2C9E97FC9FA216F /* SampleBill.jpg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B45BF28486364B0447788092 /* Sources */ = {
