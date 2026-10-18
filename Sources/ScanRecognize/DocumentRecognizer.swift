@@ -52,7 +52,7 @@ public struct DocumentRecognizer: Sendable {
             request.textRecognitionOptions.recognitionLanguages = options.languages
         }
 
-        let observations = try await request.perform(on: image)
+        let observations = try await VisionRetry.run { [request] in try await request.perform(on: image) }
         guard let document = observations.first?.document else {
             return PageRecognition()
         }

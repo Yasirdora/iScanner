@@ -9,21 +9,6 @@ Everything runs on the device. The engine has no network code and no
 third-party code dependencies. It also builds for macOS, so the whole pipeline
 can be run, measured and tested from the command line, without a simulator.
 
-<table>
-<tr>
-<td><img src="Docs/images/invoice-photo.jpg" height="480" alt="A German invoice photographed at an angle on a table"></td>
-<td><img src="Docs/images/invoice-scan.jpg" height="480" alt="The same invoice found, straightened and cleaned up"></td>
-</tr>
-<tr>
-<td align="center"><em>As photographed</em></td>
-<td align="center"><em>Found, straightened, cleaned up</em></td>
-</tr>
-</table>
-
-*A fictional German bill photographed at an angle on a table, and what the
-scanner made of it. Generated with `scanlab synth --document invoice --on-table`,
-so every word on it is known.*
-
 ## What it does
 
 | Step | Module | How |
@@ -120,7 +105,7 @@ direction fails the build.
 
 ## Tests
 
-101 tests (Swift Testing) cover the engine. One of them runs only on machines
+104 tests (Swift Testing) cover the engine. One of them runs only on machines
 without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
@@ -190,7 +175,6 @@ App/              SwiftUI iPhone app: camera, corner editor, page viewer
 Examples/         QuickStart: the smallest app that uses ScanEngine
 Tests/            Swift Testing suites
 Fixtures/         test pages, ground-truth transcripts, sample outputs
-Docs/images/      README images, made from the fixtures
 ```
 
 ## Design notes
@@ -236,6 +220,11 @@ Docs/images/      README images, made from the fixtures
   margin cover less than half the page, the page finder keeps only the part
   around the print. A card whose border cannot be seen looks the same in a
   photo, and there the card is the right answer.
+- On a very busy machine, Vision's model runtime sometimes fails a request.
+  When it fails with `e5rt_stream_completion_handler call failed`, the engine
+  runs the request again, up to twice. Any other failure is passed on at once.
+  One of them, seen under load in another project, took about 15 seconds and
+  failed again on every retry.
 - The app does not use the live tracker and auto-capture rules yet; they are
   tested engine features.
 - Curved pages, such as an open book, are not flattened. Only perspective is

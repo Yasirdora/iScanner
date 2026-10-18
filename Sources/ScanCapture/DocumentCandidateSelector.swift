@@ -1,6 +1,7 @@
 import Foundation
 import CoreGraphics
 import Vision
+import ScanCore
 
 /// One possible page outline, with the evidence for it.
 public struct DocumentCandidate: Sendable {
@@ -333,7 +334,8 @@ public struct DocumentCandidateSelector: Sendable {
 
     private func segmentation(in image: CGImage) async throws -> (quad: DocumentQuad, confidence: Float)? {
         let request = DetectDocumentSegmentationRequest()
-        guard let observation = try await ImageRequestHandler(image).perform(request) else { return nil }
+        let found = try await VisionRetry.run { try await ImageRequestHandler(image).perform(request) }
+        guard let observation = found else { return nil }
         return (DocumentQuad(
             topLeft: observation.topLeft.cgPoint,
             topRight: observation.topRight.cgPoint,
@@ -353,7 +355,8 @@ public struct DocumentCandidateSelector: Sendable {
         request.maximumAspectRatio = 1.0
         request.quadratureToleranceDegrees = 35
 
-        return try await ImageRequestHandler(image).perform(request).map { observation in
+        let found = try await VisionRetry.run { try await ImageRequestHandler(image).perform(request) }
+        return found.map { observation in
             (DocumentQuad(
                 topLeft: observation.topLeft.cgPoint,
                 topRight: observation.topRight.cgPoint,
@@ -514,7 +517,7 @@ public struct DocumentCandidateSelector: Sendable {
         // detector, but this runs once per imported photo rather than per
         // frame, and a signal that reports zero is worth nothing at any price.
         let request = RecognizeDocumentsRequest()
-        let observations = try await ImageRequestHandler(image).perform(request)
+        let observations = try await VisionRetry.run { try await ImageRequestHandler(image).perform(request) }
         guard let document = observations.first?.document else { return [] }
 
         return document.text.lines.map { line in
@@ -534,7 +537,7 @@ public struct DocumentCandidateSelector: Sendable {
 
     private func salientBoxes(in image: CGImage) async throws -> [CGRect] {
         let request = GenerateObjectnessBasedSaliencyImageRequest()
-        let observation = try await ImageRequestHandler(image).perform(request)
+        let observation = try await VisionRetry.run { try await ImageRequestHandler(image).perform(request) }
         return observation.salientObjects.map { object in
             let xs = [object.topLeft.x, object.topRight.x, object.bottomLeft.x, object.bottomRight.x]
             let ys = [object.topLeft.y, object.topRight.y, object.bottomLeft.y, object.bottomRight.y]
