@@ -12,6 +12,10 @@ struct CropEditor: View {
     @State private var corners: [CGPoint]
     @State private var detected: [CGPoint]
     @State private var dragging: Int?
+    /// Where the finger took hold of the corner, relative to the corner, so a
+    /// drag moves the corner by the finger's movement instead of jumping it to
+    /// the touch point.
+    @State private var grabOffset: CGSize = .zero
     var onCancel: () -> Void
     var onApply: (DocumentQuad) -> Void
 
@@ -47,6 +51,9 @@ struct CropEditor: View {
 
     private static let cornerNames = ["Top left", "Top right", "Bottom right", "Bottom left"]
 
+    /// The space handles are dragged in: the editor's own, not the handle's.
+    private static let space = "crop"
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -79,6 +86,7 @@ struct CropEditor: View {
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
+                .coordinateSpace(.named(Self.space))
             }
             .ignoresSafeArea()
 
@@ -144,17 +152,28 @@ struct CropEditor: View {
             .frame(width: 20, height: 20)
             .overlay { Circle().stroke(Color.accentColor, lineWidth: 3) }
             .shadow(radius: 2)
-            .position(point)
             // A generous invisible target: a 20-point dot is far smaller than
             // a fingertip, and missing the handle drags nothing at all.
-            .contentShape(Circle().size(width: 64, height: 64))
+            //
+            // Shaped and given its gesture before it is positioned. `position`
+            // makes a view as large as its container, so a content shape added
+            // after it sat at the container's top-left corner — where no corner
+            // is — and the dots on screen could not be moved at all.
+            .frame(width: 64, height: 64)
+            .contentShape(Circle())
             .gesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
                     .onChanged { value in
-                        dragging = index
+                        if dragging != index {
+                            dragging = index
+                            grabOffset = CGSize(
+                                width: point.x - value.startLocation.x,
+                                height: point.y - value.startLocation.y
+                            )
+                        }
                         corners[index] = CGPoint(
-                            x: ((value.location.x - frame.minX) / frame.width).clamped(),
-                            y: ((value.location.y - frame.minY) / frame.height).clamped()
+                            x: ((value.location.x + grabOffset.width - frame.minX) / frame.width).clamped(),
+                            y: ((value.location.y + grabOffset.height - frame.minY) / frame.height).clamped()
                         )
                     }
                     .onEnded { _ in dragging = nil }
@@ -175,6 +194,7 @@ struct CropEditor: View {
                     )
                 }
             }
+            .position(point)
     }
 
     private func accessibilityValue(_ index: Int) -> String {
