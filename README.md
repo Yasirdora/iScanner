@@ -65,14 +65,21 @@ A fictional invoice from "Musterfirma GmbH", made with
 
 <table>
 <tr>
-<td><img src="Docs/images/invoice-photo.jpg" height="480" alt="A German invoice rendered lying at an angle on a table"></td>
-<td><img src="Docs/images/invoice-scan.jpg" height="480" alt="The same invoice found, straightened and cleaned up"></td>
+<td><img src="Docs/images/invoice-shot.jpg" height="360" alt="The German invoice with a hand's shadow over the address, as shot"></td>
+<td><img src="Docs/images/invoice-auto.jpg" height="360" alt="The same invoice after Auto: white paper, black text"></td>
+<td><img src="Docs/images/invoice-ink.jpg" height="360" alt="The same invoice in Ink: black and white only"></td>
 </tr>
 <tr>
-<td align="center"><em>Rendered on a table</em></td>
-<td align="center"><em>Found, straightened, cleaned up</em></td>
+<td align="center"><em>As shot</em></td>
+<td align="center"><em>Auto</em></td>
+<td align="center"><em>Ink</em></td>
 </tr>
 </table>
+
+*The same bill lying flat, with a hand's shadow over the address, rendered
+with `scanlab synth --document invoice --shadow 0.28,0.72`: as shot, after
+Auto (which chose Colour), and in Ink, the smallest file. Made with
+`scanlab process --style original|auto|bitonal`.*
 
 With German set as the language, the scanner reads 97.1% of its words and
 finds these as data:
@@ -203,7 +210,7 @@ App/              SwiftUI iPhone app: camera, corner editor, page viewer
 Examples/         QuickStart: the smallest app that uses ScanEngine
 Tests/            Swift Testing suites
 Fixtures/         test pages, ground-truth transcripts, sample outputs
-Docs/images/      README images, made with scanlab synth and scanlab auto
+Docs/images/      README images, made with scanlab synth, auto and process
 ```
 
 ## Design notes

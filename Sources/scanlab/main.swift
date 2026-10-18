@@ -87,9 +87,11 @@ USAGE
 
   scanlab synth <output.png> [--difficulty clean|normal|hard|colour|notes]
                              [--document receipt|invoice|screenplay] [--on-table]
+                             [--shadow <x>,<y>]
       Write a synthetic shadowed page plus its exact ground-truth transcript,
       for regressing the pipeline before a real corpus exists. `invoice` is a
-      German bill; `--on-table` photographs the page at an angle on a table.
+      German bill; `--on-table` photographs the page at an angle on a table;
+      `--shadow` moves the hand's shadow (0...1 from the lower left).
 """
 
 // MARK: - Metrics
@@ -121,6 +123,7 @@ struct Arguments {
     var difficulty: String = "normal"
     var document: String = "receipt"
     var onTable = false
+    var shadow = Synthesizer.defaultShadow
     var drawTo: URL?
     var inkGamma: Double = EnhancementOptions.default.inkGamma
     var asJSON = false
@@ -153,6 +156,13 @@ struct Arguments {
             case "--on-table":
                 onTable = true
                 index += 1
+            case "--shadow":
+                // "x,y": where the hand's shadow falls, 0...1 from the page's
+                // lower-left corner.
+                let parts = index + 1 < argv.count ? argv[index + 1].split(separator: ",").compactMap { Double($0) } : []
+                guard parts.count == 2, parts.allSatisfy({ (0...1).contains($0) }) else { throw CLIError.usage }
+                shadow = CGPoint(x: parts[0], y: parts[1])
+                index += 2
             case "--json":
                 asJSON = true
                 index += 1
@@ -334,7 +344,9 @@ func synth(_ args: Arguments) throws {
     // The invoice and the screenplay have their own layout; the colour marks
     // and the ruled notes page are drawn for the receipt only.
     if document != .receipt && difficulty.hasColour { throw CLIError.usage }
-    let page = try Synthesizer.makePage(difficulty: difficulty, document: document, onTable: args.onTable)
+    let page = try Synthesizer.makePage(
+        difficulty: difficulty, document: document, onTable: args.onTable, shadowAt: args.shadow
+    )
     let output = args.input
     try FileManager.default.createDirectory(
         at: output.deletingLastPathComponent(), withIntermediateDirectories: true

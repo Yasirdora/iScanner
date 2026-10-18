@@ -203,13 +203,18 @@ enum Synthesizer {
               You're on The Quiet Hour.
     """
 
+    /// Where the hand's shadow falls, as a fraction of the page from its
+    /// lower-left corner. Every fixture uses this one, so they stay as they are.
+    static let defaultShadow = CGPoint(x: 0.72, y: 0.30)
+
     static func makePage(
         difficulty: Difficulty = .normal,
         document: Document = .receipt,
-        onTable: Bool = false
+        onTable: Bool = false,
+        shadowAt shadowCentre: CGPoint = defaultShadow
     ) throws -> CGImage {
         let clean = try renderText(difficulty: difficulty, document: document)
-        let page = shade(clean, difficulty: difficulty)
+        let page = shade(clean, difficulty: difficulty, shadowAt: shadowCentre)
         return onTable ? placeOnTable(page) : page
     }
 
@@ -385,7 +390,7 @@ enum Synthesizer {
     /// This is the exact defect flat-field correction is meant to undo, so a
     /// pipeline that works should recover close to the original text, and the
     /// harness will say by how much.
-    private static func shade(_ page: CGImage, difficulty: Difficulty) -> CGImage {
+    private static func shade(_ page: CGImage, difficulty: Difficulty, shadowAt shadowCentre: CGPoint) -> CGImage {
         let source = CIImage(cgImage: page)
         let extent = source.extent
         let hard = difficulty == .hard
@@ -413,7 +418,7 @@ enum Synthesizer {
             : CIColor(red: 0.42, green: 0.43, blue: 0.47)
 
         let shadow = CIFilter.radialGradient()
-        shadow.center = CGPoint(x: extent.maxX * 0.72, y: extent.maxY * 0.30)
+        shadow.center = CGPoint(x: extent.maxX * shadowCentre.x, y: extent.maxY * shadowCentre.y)
         shadow.radius0 = Float(extent.width * 0.10)
         shadow.radius1 = Float(extent.width * 0.55)
         shadow.color0 = hard
