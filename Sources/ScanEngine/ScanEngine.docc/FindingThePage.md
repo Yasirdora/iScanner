@@ -23,6 +23,10 @@ The finder also estimates the page from its text: the block of text with a margi
 
 So an outline seen in the photo wins over the estimate when two things hold: it holds all the text, and the estimate covers at least half of it. A seen outline is a rectangle that Vision detects, or the segmenter's outline when its confidence is 0.7 or more. The sheet under a card holds the card's text too, but the estimate covers less than a third of it, so the card still wins.
 
+## Which way is up
+
+An outline's corners are named by where they sit in the photo, and that says nothing about where the page's top is. A page lying upside down on a table, or a photo taken with the phone held sideways, came out of the straightening upside down or on its side. So every outline gets its corners named by the text inside it: the top is the edge the lines of text have above them. An outline with no text inside it keeps its corners.
+
 The winning outline is straightened with Core Image's perspective correction, using the same four corners.
 
 ## Coordinates

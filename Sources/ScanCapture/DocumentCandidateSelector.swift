@@ -184,7 +184,13 @@ public struct DocumentCandidateSelector: Sendable {
         quads += signals.rectangles.map { ($0, .rectangle) }
         if let clustered { quads.append(clustered) }
 
+        // Every outline gets its top from the print inside it, not only the
+        // text cluster. Edge detectors name corners by where they sit in the
+        // photo, which says nothing about where the page's top is: a page
+        // lying upside down, or a corner label a half turn off, came out of
+        // the rectifier upside down.
         let ranked = quads
+            .map { (Self.oriented($0.0, toRead: signals.lines), $0.1) }
             .map { score($0.0, source: $0.1, text: textBoxes, salient: signals.salient) }
             .filter { $0.quad.area >= Self.minimumArea }
             .sorted { $0.score > $1.score }
@@ -232,9 +238,9 @@ public struct DocumentCandidateSelector: Sendable {
               share <= Self.maximumSurfaceEdges
         else { return ranked }
 
-        let frame = orient(
+        let frame = Self.orient(
             [CGPoint(x: 0, y: 1), CGPoint(x: 1, y: 1), CGPoint(x: 1, y: 0), CGPoint(x: 0, y: 0)],
-            toReadAlong: readingDirection(of: signals.lines)
+            toReadAlong: Self.readingDirection(of: signals.lines)
         )
         return [score(frame, source: .frame, text: textBoxes, salient: signals.salient)] + ranked
     }
@@ -401,7 +407,16 @@ public struct DocumentCandidateSelector: Sendable {
         guard corners.count == 4 else {
             return DocumentQuad(topLeft: .zero, topRight: .zero, bottomRight: .zero, bottomLeft: .zero)
         }
-        return orient(corners, toReadAlong: readingDirection(of: lines))
+        return Self.orient(corners, toReadAlong: Self.readingDirection(of: lines))
+    }
+
+    /// The same outline, with its corners renamed so the print inside it
+    /// reads upright once straightened. Unchanged when no line of print has
+    /// its centre inside it: with nothing to read, there is no top to find.
+    static func oriented(_ quad: DocumentQuad, toRead lines: [TextLine]) -> DocumentQuad {
+        let inside = lines.filter { quad.contains(CGPoint(x: $0.boundingBox.midX, y: $0.boundingBox.midY)) }
+        guard !inside.isEmpty else { return quad }
+        return orient(quad.corners, toReadAlong: readingDirection(of: inside))
     }
 
     /// The direction the text runs, weighted by line length.
@@ -409,7 +424,7 @@ public struct DocumentCandidateSelector: Sendable {
     /// Longer lines are more reliable indicators of the reading direction than
     /// a stray short one, and on this voucher the body text is much longer than
     /// the serial number printed across it.
-    private func readingDirection(of lines: [TextLine]) -> CGVector {
+    static func readingDirection(of lines: [TextLine]) -> CGVector {
         var dx = 0.0, dy = 0.0
         for line in lines {
             let vx = Double(line.topRight.x - line.topLeft.x)
@@ -429,7 +444,7 @@ public struct DocumentCandidateSelector: Sendable {
     /// voucher photographed sideways came out as a landscape page with the
     /// text running bottom to top, which is unreadable without turning the
     /// phone.
-    private func orient(_ corners: [CGPoint], toReadAlong direction: CGVector) -> DocumentQuad {
+    static func orient(_ corners: [CGPoint], toReadAlong direction: CGVector) -> DocumentQuad {
         // Which edge of the rectangle best matches the direction the text runs.
         var bestIndex = 0
         var bestAlignment = -Double.infinity

@@ -120,7 +120,7 @@ direction fails the build.
 
 ## Tests
 
-97 tests (Swift Testing) cover the engine. One of them runs only on machines
+101 tests (Swift Testing) cover the engine. One of them runs only on machines
 without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
