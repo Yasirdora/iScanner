@@ -108,6 +108,20 @@ func registryExamplesAreValid(_ iban: String) {
     #expect(IBAN.find(in: "IBAN: \(iban)").count == 1)
 }
 
+@Test("A digit read as a letter fails the national check in France, Monaco, Italy and San Marino", arguments: [
+    "FR1420041010050Q00013M02606", "MC581122200001M123456789030",
+    "IT60X05428111010E0000123456", "SM86U0322509800H00000270100"
+])
+func nationalCheckCatchesLetterForDigit(_ iban: String) {
+    // Each is its country's registry example above with one digit of the
+    // account read as a letter: a 5 as Q, a 0 as M, a 0 as E, a 0 as H. The
+    // account may hold letters, so the format allows them, and the IBAN's
+    // check digits still hold. Only the RIB key (France, Monaco) or the CIN
+    // (Italy, San Marino) is wrong now.
+    #expect(!IBAN.isValid(iban))
+    #expect(IBAN.find(in: "IBAN: \(iban)").isEmpty)
+}
+
 @Test("A code the registry does not list, such as a creditor reference's RF, is not taken for an IBAN")
 func unknownCountryIsRejected() {
     // RF is no country: it starts an ISO 11649 creditor reference, printed on

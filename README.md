@@ -142,7 +142,7 @@ direction fails the build.
 
 ## Tests
 
-117 tests (Swift Testing) cover the engine. One of them runs only on machines
+118 tests (Swift Testing) cover the engine. One of them runs only on machines
 without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
@@ -251,10 +251,19 @@ Docs/images/      README images, made with scanlab synth, auto and process
 - Vision's data detection can read a quantity printed next to an amount as part
   of the amount ("4  340,00 €" as 4340 €).
 - The IBAN check does not catch every misread. About 1 in 105 IBANs with two
-  misread digits still pass. In 38 of the registry's 89 countries, France,
-  Italy and Switzerland among them, part of the account number may hold
-  letters as well as digits; there, about 1 in 100 digits read as a letter
-  ("5" as "S") still pass. Show a found IBAN to the user before paying.
+  misread digits still pass. In 38 of the registry's 89 countries, part of
+  the account number may hold letters as well as digits. In four of them the
+  engine also tests a national check: the RIB key in France and Monaco, the
+  CIN in Italy and San Marino. There, about 1 in 1,000 (France, Monaco) and
+  1 in 2,400 (Italy, San Marino) digits read as a letter still pass, among
+  them "1" as "J" in France and "6" as "G" in Italy. In the other 34,
+  Switzerland among them, about 1 in 100 still pass ("5" as "S"). Show a
+  found IBAN to the user before paying.
+- The RIB key and the CIN follow the rules that bank calculators use; the
+  French and Italian banking associations publish no text of them online.
+  SWIFT's example IBANs for the four countries fit them. If a rule were
+  wrong, a real IBAN from these countries would be missing, but a wrong one
+  would still not be reported.
 - IBANs are checked against SWIFT's IBAN registry of 17 September 2026. An
   IBAN from a country added to the registry later is not found.
 - On a flat page with a picture or a logo away from its text, the page finder

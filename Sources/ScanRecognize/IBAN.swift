@@ -13,12 +13,27 @@ import Foundation
 /// so does a character lost or doubled. Measured on 2,000 random German IBANs,
 /// every single misread character fails the check.
 ///
+/// In 38 of the 89 countries part of the account number may hold letters as
+/// well as digits, so there the format cannot see a digit misread as a
+/// letter. Four of them add a check of their own, and it is tested too: the
+/// RIB key (two digits) in France and Monaco, the CIN (a letter) in Italy
+/// and San Marino. Measured on 6,000 random IBANs per country, a digit
+/// misread as a letter then passes about 1 in 1,000 times in France and
+/// Monaco and about 1 in 2,400 in Italy and San Marino, against about 1 in
+/// 97 before. What still passes is a letter the national check counts as the
+/// same digit, such as 1 read as J in France, or 6 read as G, a common OCR
+/// slip, in Italy; these pass as often as before. The French and Italian
+/// banking associations publish neither rule online; the rules here are the
+/// ones bank calculators use, and SWIFT's example IBANs fit them. A national
+/// check can only reject, so a wrong rule would lose a real IBAN, never
+/// report a wrong one.
+///
 /// Not every mistake is caught. About 1 in 105 IBANs with two misread digits
-/// still pass. In 38 of the 89 countries, France and Italy among them, part
-/// of the account number may hold letters as well as digits; there, about 1
-/// in 100 digits misread as a letter still pass, and so do some swaps of two
-/// neighbouring characters. A reported IBAN is very likely the printed one,
-/// not certainly. For paying a bill from a photo, a
+/// still pass. In the other 34 countries with letters in the account number,
+/// about 1 in 100 digits misread as a letter still pass. Some swaps of two
+/// neighbouring characters pass too, except in France and Monaco, where
+/// none of 240,000 measured did. A reported IBAN is very likely the printed
+/// one, not certainly. For paying a bill from a photo, a
 /// missing IBAN is an inconvenience; a wrong one is money sent to a stranger,
 /// so show the IBAN to the user before paying. For the same reason, a country
 /// code the registry does not list is never reported: "RF" starts a creditor
@@ -53,8 +68,9 @@ public enum IBAN {
     }
 
     /// Whether `candidate` is an IBAN of a country in the registry, in that
-    /// country's format, with correct check digits. Spaces are ignored;
-    /// letters may be in either case.
+    /// country's format, with correct check digits, and, in France, Monaco,
+    /// Italy and San Marino, a correct national check as well. Spaces are
+    /// ignored; letters may be in either case.
     public static func isValid(_ candidate: String) -> Bool {
         let compact = candidate.filter { !$0.isWhitespace }.uppercased()
         guard compact.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }),
@@ -77,7 +93,55 @@ public enum IBAN {
                 remainder = (remainder * 10 + (digit.wholeNumberValue ?? 0)) % 97
             }
         }
-        return remainder == 1
+        guard remainder == 1 else { return false }
+
+        // Four countries put a check of their own inside the account details.
+        // Where the format allows a letter or a digit, it catches most of the
+        // digits read as a letter that the check digits above let through.
+        let bban = Array(compact.dropFirst(4))
+        switch compact.prefix(2) {
+        case "FR", "MC": return ribKeyHolds(bban)
+        case "IT", "SM": return cinHolds(bban)
+        default: return true
+        }
+    }
+
+    /// Whether the RIB key of a French or Monégasque IBAN holds. After the
+    /// check digits come the bank (5 digits), the branch (5 digits), the
+    /// account (11 letters or digits) and the key (2 digits), and the key is
+    /// 97 − ((89 × bank + 15 × branch + 3 × account) mod 97).
+    private static func ribKeyHolds(_ bban: [Character]) -> Bool {
+        // A letter in the account counts as one digit: A and J are 1, B, K
+        // and S are 2, and so on to I, R and Z, which are 9. SWIFT's French
+        // example IBAN holds an M, counted as 4.
+        let letterDigits = Array("12345678912345678923456789")
+        var digits: [Int] = []
+        for character in bban {
+            guard let digit = character.wholeNumberValue
+                ?? character.asciiValue.flatMap({ letterDigits[Int($0) - 65].wholeNumberValue }) else { return false }
+            digits.append(digit)
+        }
+        func number(_ places: Range<Int>) -> Int { digits[places].reduce(0) { $0 * 10 + $1 } }
+        let remainder = (89 * number(0..<5) + 15 * number(5..<10) + 3 * number(10..<21)) % 97
+        return number(21..<23) == 97 - remainder
+    }
+
+    /// Whether the CIN of an Italian or San Marino IBAN holds: the letter
+    /// right after the check digits, computed from the 22 characters after
+    /// it (bank, branch and account).
+    private static func cinHolds(_ bban: [Character]) -> Bool {
+        // A digit counts as itself, a letter as A = 0 … Z = 25. The 1st, 3rd,
+        // 5th … character is replaced through this table; the others count
+        // as they are. The sum, divided by 26, leaves the CIN (A = 0).
+        let oddPlaceValues = [1, 0, 5, 7, 9, 13, 15, 17, 19, 21, 2, 4, 18,
+                              20, 11, 3, 6, 8, 12, 14, 16, 10, 22, 25, 24, 23]
+        var sum = 0
+        for (place, character) in bban.dropFirst().enumerated() {
+            guard let value = character.wholeNumberValue
+                ?? character.asciiValue.map({ Int($0) - 65 }) else { return false }
+            sum += place.isMultiple(of: 2) ? oddPlaceValues[value] : value
+        }
+        return bban.first?.asciiValue.map(Int.init) == 65 + sum % 26
     }
 
     /// Each country's format, one letter per character of its IBANs: "a" for
