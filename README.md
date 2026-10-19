@@ -1,6 +1,6 @@
 # Scanner
 
-[![CI](https://github.com/Yasirdora/scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/Yasirdora/scanner/actions/workflows/ci.yml)
+[![CI](https://github.com/Yasirdora/iScanner/actions/workflows/ci.yml/badge.svg)](https://github.com/Yasirdora/iScanner/actions/workflows/ci.yml)
 
 An on-device document scanner for iPhone. A Swift package turns a photo of a
 page into a clean, searchable PDF, and a SwiftUI app is built on top of it.
