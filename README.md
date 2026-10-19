@@ -142,7 +142,7 @@ direction fails the build.
 
 ## Tests
 
-114 tests (Swift Testing) cover the engine. One of them runs only on machines
+117 tests (Swift Testing) cover the engine. One of them runs only on machines
 without the on-device model, such as CI. Some of them, by name:
 
 - *Every known page reads within its error limit, in every style* (28 cases)
@@ -250,10 +250,6 @@ Docs/images/      README images, made with scanlab synth, auto and process
 
 - Vision's data detection can read a quantity printed next to an amount as part
   of the amount ("4  340,00 €" as 4340 €).
-- Vision's data detection takes the order of day and month from the device's
-  region, not from the page. With the region set to the United States, a
-  German "01.10.2026" comes back as 10 January. Dates whose day is 13 or more
-  come back right.
 - The IBAN check does not catch every misread. About 1 in 105 IBANs with two
   misread digits still pass. In 38 of the registry's 89 countries, France,
   Italy and Switzerland among them, part of the account number may hold

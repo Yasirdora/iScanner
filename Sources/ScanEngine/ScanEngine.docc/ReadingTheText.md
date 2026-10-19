@@ -52,7 +52,7 @@ Dates come back as `calendarEvent` values, in ISO 8601 and in UTC: `2026-10-28T1
 
 Only dates printed on the page are reported. Data detection fills in what a text leaves out from the day it runs on: "Zahlbar bis 28.10.2026" ("payable until") comes back as a span from that day to 28 October, and "14:35" on its own as that day at 14:35. So the recogniser reads the text twice, as if on two days more than a year apart, and keeps a date only when both readings agree. "bis 28.10.2026" gives 28 October, and "vom 10.10.2026 bis 14.10.2026" gives both days. A time, a weekday, "heute" or a date without a year gives no date.
 
-Data detection takes the order of day and month from the device's region, not from the page. With the region set to the United States, "01.10.2026" comes back as 10 January; with Germany or the United Kingdom, as 1 October. Dates whose day is 13 or more come back right either way.
+A date written with dots, such as "01.10.2026" or "1.10.26", is read day first on every device, as Germany and most of Europe write it. Data detection alone takes the order of day and month from the device's region, not from the page: with the region set to the United States, "01.10.2026" came back as 10 January. So the recogniser takes the day and month of a date written with dots from the text itself. A date written with slashes, such as "10/01/2026", is still read in the order of the device's region: the United States writes it month first, so there it is 1 October; with the region set to Germany it is 10 January.
 
 ## Amounts
 
